@@ -22,4 +22,8 @@ octave-workspace
 .autosave
 
 # Data
-.csv
+*.csv
+*.mat
+
+# mac
+.DS_Store
