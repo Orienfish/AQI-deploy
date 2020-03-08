@@ -12,6 +12,6 @@ m_B = 4.43815458;
 m_C = 1.7971150984226512;
 
 Tcore = (m_A * Tamb + m_B * pwr + m_C);
-fprintf("%f\n", Tcore);
+%fprintf("%f\n", Tcore);
 end
 

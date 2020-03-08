@@ -12,13 +12,14 @@ a = 78.0;
 b = -0.081;
 X = 0.759;
 Y = -66.8;
-Z = ???;
-k = 1.38064852e-23; % Boltzmann constant
-c = ???;
+Z = -8.37e-4;
+k = 8.617e-5; % Boltzmann constant
+c = 1.0;
 
 % convert ambient temperature to core temperature
 Tcore = temp_amb2core(Tc, P);
 Tk = Tcore + 273.15; % convert from Celsius to Kelvin
-t0 = c * (1/V)^(a-b*Tk) * exp((X+(Y/Tk)+Z*Tk)/(k*Tk)); 
+t0 = c * (1/V)^(a-b*Tk) * exp((X+(Y/Tk)+Z*Tk)/(k*Tk));
+fprintf("%f\n", t0);
 end
 
