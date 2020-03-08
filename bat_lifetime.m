@@ -1,8 +1,8 @@
-function [t0] = bat_lifetime(y0, T, I, dt)
+function [t0] = bat_lifetime(y0, Tc, I, dt)
 % Calculate battery lifetime.
 % Args:
 %   y0: total initial capacity in mAh
-%   T: ambient temperature in Celsius
+%   Tc: ambient temperature in Celsius
 %   I: average current draw in mA
 %   dt: returned lifetime resolution in h
 % 
@@ -17,20 +17,20 @@ R = 0.008314;
 % correct initial capacity according to ambient temperature
 % valid range for temperature is -5 to 40 Celsius
 CF = 1.0;
-if T >= -5.0 && T < 10.0
-    CF = (-5.117e-7)*(T+5)^3 + 1.0076e-3*(T+5) + 9.98e-1;
-elseif T >= 10.0 && T < 25.0
-    CF = 2.2375e-6*(T-10)^3 + (-2.3027e-5)*(T-10)^2 + 6.6620e-4*(T-10)^1 + 1.0114;
-elseif T >= 25.0 && T < 32.5
-    CF = (-2.0925e-5)*(T-25)^3 + 7.7663e-5*(T-25)^2 + 1.4817e-3*(T-25)^1 + 1.0237;
-elseif T >= 32.5 && T < 40
-    CF = 1.7473e-5*(T-32.5)^3 + (-3.9315e-4)*(T-32.5)^2 + (-8.8444e-4)*(T-32.5)^1 + 1.0303;
+if Tc >= -5.0 && Tc < 10.0
+    CF = (-5.117e-7)*(Tc+5)^3 + 1.0076e-3*(Tc+5) + 9.98e-1;
+elseif Tc >= 10.0 && Tc < 25.0
+    CF = 2.2375e-6*(Tc-10)^3 + (-2.3027e-5)*(Tc-10)^2 + 6.6620e-4*(Tc-10)^1 + 1.0114;
+elseif Tc >= 25.0 && Tc < 32.5
+    CF = (-2.0925e-5)*(Tc-25)^3 + 7.7663e-5*(Tc-25)^2 + 1.4817e-3*(Tc-25)^1 + 1.0237;
+elseif Tc >= 32.5 && Tc < 40
+    CF = 1.7473e-5*(Tc-32.5)^3 + (-3.9315e-4)*(Tc-32.5)^2 + (-8.8444e-4)*(Tc-32.5)^1 + 1.0303;
 end
 %fprintf("%f\n", CF);
 y0 = y0 * CF;
 i0 = y0 * c;
 j0 = y0 * (1 - c);
-k = A * exp(-Ea / (R * (T + 273.15))); % note the temperature here is in Kelvin!
+k = A * exp(-Ea / (R * (Tc + 273.15))); % note the temperature here is in Kelvin!
 %fprintf("%f, %f\n", i0, k);
 
 % iteratively compute battery lifetime
