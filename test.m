@@ -1,20 +1,50 @@
 % Test every functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test battery lifetime function, plot out the lifetime at various temp
-temp = linspace(-5, 40, 10);
-batlife = zeros(10);
-for i = 1:10
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_bat = 10;
+temp = linspace(-5, 40, n_bat);
+batlife = zeros(1, n_bat);
+for i = 1:n_bat
     batlife(i) = bat_lifetime(750, temp(i), 40, 0.1);
 end
 figure(1);
 plot(temp, batlife);
+title('Estimated battery time under various ambient temperature')
 ylim([17 18.5])
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test ambient temperature to core temperature conversion function
 % plot out the core temperature at various ambient temperature
-Tamb = linspace(20, 40, 20);
-Tcore = zeros(20);
-for i = 1:20
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_amb2core = 41;
+Tamb = linspace(0, 40, n_amb2core);
+Tcore = zeros(1, n_amb2core);
+for i = 1:n_amb2core
     Tcore(i) = temp_amb2core(Tamb(i), 1.0);
 end
 figure(2);
 plot(Tamb, Tcore);
+title('Core temperature under various ambient temperature')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test MTTF_TDDB under various temperature and power
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_mttftemp = 41;
+Tamb = linspace(0, 40, n_mttftemp);
+n_pwr = 4;
+pwr = linspace(1, 4, n_pwr);
+MTTF = zeros(n_mttftemp, n_pwr);
+for i = 1:n_mttftemp
+    for j = 1:n_pwr
+        MTTF(i, j) = mttf_tddb(1.1, Tamb(i), pwr(j));
+    end
+end
+figure(3);
+for j = 1:n_pwr
+    plot(Tamb, MTTF(:, j));
+    hold on;
+end
+hold off;
+legend('pwr=1W', 'pwr=2W', 'pwr=3W', 'pwr=4W');
+title('MTTF of TDDB under various ambient temperature')
