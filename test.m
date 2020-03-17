@@ -10,8 +10,8 @@ for i = 1:n_bat
 end
 figure(1);
 plot(temp, batlife);
-title('Estimated battery time under various ambient temperature')
-ylim([17 18.5])
+title('Estimated battery time under various ambient temperature');
+ylim([17 18.5]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test ambient temperature to core temperature conversion function
@@ -25,7 +25,7 @@ for i = 1:n_amb2core
 end
 figure(2);
 plot(Tamb, Tcore);
-title('Core temperature under various ambient temperature')
+title('Core temperature under various ambient temperature');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test MTTF_TDDB under various temperature and power
@@ -47,4 +47,17 @@ for j = 1:n_pwr
 end
 hold off;
 legend('pwr=1W', 'pwr=2W', 'pwr=3W', 'pwr=4W');
-title('MTTF of TDDB under various ambient temperature')
+title('MTTF of TDDB under various ambient temperature');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test transmission power consumption under different distance
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_dist = 41;
+dist = linspace(0, 400, n_dist);
+Ptx = zeros(1, n_dist);
+for i = 1:n_dist
+    Ptx(i) = txPower(dist(i));
+end
+figure(4);
+plot(dist, Ptx);
+title('Average transmission power under various distance');
