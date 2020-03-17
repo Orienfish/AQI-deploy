@@ -61,3 +61,21 @@ end
 figure(4);
 plot(dist, Ptx);
 title('Average transmission power under various distance');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test average power consumption under different distance
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Btx = 2500; % 20kbps = 2500B/s
+Brx = 2500;
+Ltx = 1e3; % 1kB
+Lrx = 1e3;
+Prx = 22.2e-3; % 22.2mW
+Pslp = 1e-4; % 0.1mW
+T = 1; % 1s
+avgPwr = zeros(1, n_dist);
+for i = 1:n_dist
+    avgPwr(i) = avgPower(dist(i), Btx, Ltx, Brx, Lrx, Prx, Pslp, T);
+end
+figure(5);
+plot(dist, avgPwr);
+title('Average total power under various distance');
