@@ -19,29 +19,32 @@ toc
 %% fit the RBF kernel
 % iteration through each location pair
 nPair = (length(f_list) * (length(f_list) - 1)) / 2; % total number of pairs
-x = zeros(1, nPair);
-y = zeros(1, nPair);
+x = zeros(nPair, 1);
+y = zeros(nPair, 1);
+idx = 1;
 for l1 = 1:length(f_list)
     for l2 = l1+1:length(f_list)
         latlon1=[data_list(l1).lat data_list(l1).lon];
         latlon2=[data_list(l2).lat data_list(l2).lon];
         [d1km, d2km] = lldistkm(latlon1, latlon2);
-        x = d1km * 1000; % use d1 distance, convert to meters
-        y = cov_mat_pm2_5(l1, l2);
+        x(idx) = d1km * 1000; % use d1 distance, convert to meters
+        y(idx) = cov_mat_pm2_5(l1, l2);
+        idx = idx + 1;
     end
 end
-f = fit(x,y,'exp1');
-plot(f, x, y);
+% General model Exp1: f(x) = a*exp(b*x)
+K = fit(x, y, 'exp1');
+plot(K , x, y);
 
 %% plot
-lat = horzcat(data_list(:).lat);
-lon = horzcat(data_list(:).lon);
-sizedata = horzcat(data_list(:).pm2_5_avg);
-plot(lat, lon, sizedata);
+%lat = horzcat(data_list(:).lat);
+%lon = horzcat(data_list(:).lon);
+%sizedata = horzcat(data_list(:).pm2_5_avg);
+%bubbleplot(lat, lon, sizedata);
 
-function plot(lat, lon, sizedata)
+%function bubbleplot(lat, lon, sizedata)
     % plot the locations
-    figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon, sizedata);
-    geobasemap streets-light; % set base map style
-end
+%    figure('Position', [0 0 1000 800]);
+%    gb = geobubble(lat, lon, sizedata);
+%    geobasemap streets-light; % set base map style
+%end
