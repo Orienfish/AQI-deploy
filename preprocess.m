@@ -1,10 +1,15 @@
-function data_list = preprocess()
-% Preprocess the existing data in ./data folder.
+function data_list = preprocess(f_list)
+%% Preprocess the existing data in ./data folder.
 % Convert historical readings into average, variance and count.
 % A struct with name, location, and statistical parameters are returned.
+%
+% Args:
+%   f_list: list of file names to import data from
+%
+% Return:
+%   data_list: statistical pattern of the data in a struct
 
-% use all primary data
-f_list = dir('./data/*Primary*.csv');
+% define data_list struct
 data_list = repmat( struct( ...
     'name', '', ...
     'lat', 0.0, 'lon', 0.0, ...
