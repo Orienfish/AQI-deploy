@@ -1,5 +1,5 @@
 function [cov_mat, corr_mat] = cov_matrix(f_list, label, max_cnt)
-%% Calculate the covariance matrix and correlation coefficient matrix.
+% Calculate the covariance matrix and correlation coefficient matrix.
 % 
 % Args:
 %   f_list: list of files to import data from

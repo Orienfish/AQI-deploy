@@ -1,5 +1,5 @@
 function data_list = preprocess(f_list)
-%% Preprocess the existing data in ./data folder.
+% Preprocess the existing data in ./data folder.
 % Convert historical readings into average, variance and count.
 % A struct with name, location, and statistical parameters are returned.
 %
