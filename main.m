@@ -55,13 +55,17 @@ fprintf('Generate V with size %d x %d \n', n_latV, n_lonV);
 % bubbleplot(V(:, 1), V(:, 2));
 
 %% obtain mean vector and covariance matrix and correlation matrix of certain data types
+mean_pm2_5 = vertcat(dataT.pm2_5_avg(:)); % mean
+cov_mat_pm2_5_sav = './data/cov_mat_pm2_5.csv';
+corr_mat_pm2_5_sav = './data/corr_mat_pm2_5.csv';
 tic
-%mean_pm1 = vertcat(dataT.pm1_avg(:));
-mean_pm2_5 = vertcat(dataT.pm2_5_avg(:));
-%mean_pm10 = vertcat(dataT.pm10_avg(:));
-%[cov_mat_pm1, corr_mat_pm1] = cov_matrix(f_list, 'pm1', sdate, edate, interval);
-[cov_mat_pm2_5, corr_mat_pm2_5] = cov_matrix(f_list, 'pm2_5', sdate, edate, interval);
-%[cov_mat_pm10, corr_mat_pm10] = cov_matrix(f_list, 'pm10', sdate, edate, interval);
+if exist(cov_mat_pm2_5_sav, 'file') && exist(corr_mat_pm2_5_sav, 'file')
+    cov_mat_pm2_5 = readmatrix(cov_mat_pm2_5_sav);
+    corr_mat_pm2_5 = readmatrix(corr_mat_pm2_5_sav);
+else
+[cov_mat_pm2_5, corr_mat_pm2_5] = cov_matrix(f_list, 'pm2_5', ...
+    sdate, edate, interval, cov_mat_pm2_5_sav, corr_mat_pm2_5_sav);
+end
 toc
 figure();
 h = heatmap(cov_mat_pm2_5);

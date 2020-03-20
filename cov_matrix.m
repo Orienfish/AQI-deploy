@@ -1,4 +1,5 @@
-function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, interval)
+function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, ...
+    interval, cov_mat_sav, corr_mat_sav)
 % Calculate the covariance matrix and correlation coefficient matrix.
 % Use the data between start date and end date.
 % 
@@ -8,6 +9,8 @@ function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, interval)
 %   sdate: the start date in string format 'dd-mm-yyyy HH-MM-SS UTC'
 %   edate: the end date in string format 'dd-mm-yyyy HH-MM-SS UTC'
 %   interval: the sampling interval in seconds
+%   cov_mat_sav: the name of file to save extracted cov mat
+%   corr_mat_sav: the name of file to save extracted corr mat
 %
 % Return:
 %   cov_mat: covariance matrix of the data samples of the given label
@@ -70,10 +73,12 @@ end
 % 'partialrows' omit rows containing NaN only on a pairwise basis for 
 % each two-column covariance calculation
 cov_mat = cov(mat, 'partialrows');
+writematrix(cov_mat, cov_mat_sav); % write to file
 
 %% corrcoef(A) returns the matrix of correlation coefficients for A, where 
 % the columns of A represent random variables and the rows represent observations.
 % Use 'pairwise' to compute each two-column correlation coefficient on a 
 % pairwise basis. If one of the two columns contains a NaN, that row is omitted.
 corr_mat = corrcoef(mat, 'Rows', 'pairwise');
+writematrix(corr_mat, corr_mat_sav); % write to file
 end
