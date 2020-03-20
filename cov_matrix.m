@@ -1,20 +1,33 @@
-function [cov_mat, corr_mat] = cov_matrix(f_list, label, max_cnt)
+function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate)
 % Calculate the covariance matrix and correlation coefficient matrix.
+% Use the data between start date and end date.
 % 
 % Args:
 %   f_list: list of files to import data from
 %   label: indicate the type of data to process
-%   max_cnt: the maximum valid data samples of the specified label
+%   sdate: the start date in string format 'dd-mm-yyyy HH-MM-SS UTC'
+%   edate: the end date in string format
 %
 % Return:
 %   cov_mat: covariance matrix of the data samples of the given label
 %   corr_mat: correlation coefficient matrix of the data samples
 % 
 % Repeated reading is performed. Might be able to improve.
-% Question: are those zeros valid data or not?
+% Question: are those zeros valid data or not? 
+
+% caculate the total length
+formatIn = 'yyyy-mm-dd HH:MM:SS UTC';
+st_vec = datevec(datenum(sdate, formatIn)); % start time vector
+et_vec = datevec(datenum(edate, formatIn)); % end time vector
+t_secs = etime(et_vec, st_vec); % calculate the elapsed time between two vectors
+fprintf('total time length %d s\n', t_secs);
+n_obs = t_secs / (60 * 10) + 1; % count of all samples with 10 mins per sample
 
 % reserve a mat to fill in the data of the same type
-mat = NaN(max_cnt, length(f_list));
+% col represent variables and rows represent observations
+mat = NaN(n_obs, length(f_list));
+fprintf('mat size %d x %d\n', n_obs, length(f_list));
+
 for f_idx = 1:length(f_list)
     % obtain the list of data files
     f_name = f_list(f_idx).name;
@@ -23,32 +36,35 @@ for f_idx = 1:length(f_list)
     f_path = append(f_list(f_idx).folder, '/', f_name);
     % we only need one type of data from each file
     T = readtable(f_path, 'Delimiter', ',', 'HeaderLines', 0);
-        
-    switch label
-        % the function can only deal with one label at one time
-        case 'temp'
-            % get the list of indexes of valid data
-            valid_idx = ~isnan(T.Temperature_F);
-            % copy the valid data to mat
-            mat(1:nnz(valid_idx), f_idx) = T.Temperature_F(valid_idx);
-        case 'humid'
-            valid_idx = ~isnan(T.Humidity__);
-            mat(1:nnz(valid_idx), f_idx) = T.Humidity__(valid_idx);
-        case 'pm1'
-            valid_idx = ~isnan(T.PM1_0_CF1_ug_m3);
-            mat(1:nnz(valid_idx), f_idx) = T.PM1_0_CF1_ug_m3(valid_idx);
-        case 'pm2_5'
-            valid_idx = ~isnan(T.PM2_5_CF1_ug_m3);
-            mat(1:nnz(valid_idx), f_idx) = T.PM2_5_CF1_ug_m3(valid_idx);
-        case 'pm10'
-            valid_idx = ~isnan(T.PM10_0_CF1_ug_m3);
-            mat(1:nnz(valid_idx), f_idx) = T.PM10_0_CF1_ug_m3(valid_idx);
-        otherwise
-            fprintf('Invalid label!');
-            return;
+    
+    for i = 1:height(T)
+        % convert the date to index
+        cdate = T.created_at(i);
+        curt_vec = datevec(datenum(cdate, formatIn)); % current time vector
+        t_secs = etime(curt_vec, st_vec);
+        idx = t_secs / (60 * 10) + 1;
+        %fprintf("%d %d\n", t_secs, idx);
+        switch label
+            % the function can only deal with one label at one time
+            case 'temp'
+                % fill in the data
+                mat(idx, f_idx) = T.Temperature_F(i);
+            case 'humid'
+                mat(idx, f_idx) = T.Humidity__(i);
+            case 'pm1'
+                mat(idx, f_idx) = T.PM1_0_CF1_ug_m3(i);
+            case 'pm2_5'
+                mat(idx, f_idx) = T.PM2_5_CF1_ug_m3(i);
+            case 'pm10'
+                mat(idx, f_idx) = T.PM10_0_CF1_ug_m3(i);
+            otherwise
+                fprintf('Invalid label!');
+                return;
+        end
     end
 end
-%% cov(A) function: If A is a matrix whose columns represent random 
+%% cov(A) function: 
+% If A is a matrix whose columns represent random 
 % variables and whose rows represent observations, C is the covariance 
 % matrix with the corresponding column variances along the diagonal.
 % 'partialrows' omit rows containing NaN only on a pairwise basis for 

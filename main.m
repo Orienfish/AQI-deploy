@@ -1,8 +1,16 @@
-% main.m
+%% main.m
 clear;
 warning('off','all')
 addpath('./libs/');
 addpath('./lldistkm/');
+
+%% settings
+% D - pre-deployment
+% V - reference locations
+% A - deployment plan
+m_A = 10;
+sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
+edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 
 %% pre-process
 % get the mean, var and count of each type of data
@@ -10,40 +18,47 @@ f_list = dir('./data/*Primary*.csv'); % use all primary data
 tic
 data_list = preprocess(f_list); % pre-process
 toc
-% bubble plot
-lat = horzcat(data_list(:).lat);
-lon = horzcat(data_list(:).lon);
+% bubble plot for pre-deployment D on pm2.5
+D_lat = vertcat(data_list(:).lat);
+D_lon = vertcat(data_list(:).lon);
+D = horzcat(D_lat, D_lon);
 sizedata = horzcat(data_list(:).pm2_5_avg);
-bubbleplot_wsize(lat, lon, sizedata);
+bubbleplot_wsize(D(:, 1), D(:, 2), sizedata);
 
 %% get the region range, set grid unit and obtain V
-latUpper = max(lat);
-latLower = min(lat);
-lonUpper = max(lon);
-lonLower = min(lon);
+latUpper = max(D_lat);
+latLower = min(D_lat);
+lonUpper = max(D_lon);
+lonLower = min(D_lon);
 gridUnit = 0.05; % adjustable
 n_latV = floor((latUpper - latLower) / gridUnit);
 n_lonV = floor((lonUpper - lonLower) / gridUnit);
-latV = linspace(latLower, latUpper, n_latV);
-lonV = linspace(lonLower, lonUpper, n_lonV);
+V_lat = linspace(latLower, latUpper, n_latV);
+V_lon = linspace(lonLower, lonUpper, n_lonV);
 
 % fill the grid locations into V
 n_V = n_latV * n_lonV; % total number of locations in V
 V = zeros(n_V, 2);
 for i = 1:n_latV
     for j = 1:n_lonV
-        V((i - 1) * n_lonV + j, :) = [latV(i) lonV(j)];
+        V((i - 1) * n_lonV + j, :) = [V_lat(i) V_lon(j)];
     end
 end
 fprintf('Generate V with size %d x %d \n', n_latV, n_lonV);
 % bubbleplot(V(:, 1), V(:, 2));
 
-%% obtain covariance matrix and correlation matrix of certain data types
+%% obtain mean vector and covariance matrix and correlation matrix of certain data types
 tic
-[cov_mat_pm1, corr_mat_pm1] = cov_matrix(f_list, 'pm1', max(horzcat(data_list(:).pm1_cnt)));
-[cov_mat_pm2_5, corr_mat_pm2_5] = cov_matrix(f_list, 'pm2_5', max(horzcat(data_list(:).pm2_5_cnt)));
-[cov_mat_pm10, corr_mat_pm10] = cov_matrix(f_list, 'pm10', max(horzcat(data_list(:).pm10_cnt)));
+mean_pm1 = vertcat(data_list(:).pm1_avg);
+mean_pm2_5 = vertcat(data_list(:).pm2_5_avg);
+mean_pm10 = vertcat(data_list(:).pm10_avg);
+[cov_mat_pm1, corr_mat_pm1] = cov_matrix(f_list, 'pm1', sdate, edate);
+[cov_mat_pm2_5, corr_mat_pm2_5] = cov_matrix(f_list, 'pm2_5', sdate, edate);
+[cov_mat_pm10, corr_mat_pm10] = cov_matrix(f_list, 'pm10', sdate, edate);
 toc
+figure();
+h = heatmap(cov_mat_pm2_5);
+
 
 %% fit the RBF kernel
 % iteration through each location pair
@@ -65,8 +80,13 @@ end
 K = fit(x, y, 'exp1');
 % plot(K, x, y);
 
+%% Get the estimated mean and cov at V
+[mean_va, cov_va] = gp_predict_knownA(V, D, mean_pm2_5, cov_mat_pm2_5, K);
+figure('Position', [0 0 1000 800]);
+gb = geodensityplot(V(:, 1), V(:, 2), mean_va); % plot density plot for mean
+h = heatmap(cov_va); % plot heatmap for the cov matrix
+
 %% Generate a random A
-m_A = 10;
 A = zeros(m_A, 2);
 pd_lat = makedist('Uniform', 'lower', latLower, 'upper', latUpper);
 pd_lon = makedist('Uniform', 'lower', lonLower, 'upper', lonUpper);
@@ -78,6 +98,9 @@ sizedata = ones(m_A + n_V, 1); % uniform size
 colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
 bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
     sizedata, colordata);
+
+%% Evaluate uncertainty or conditional entropy
+condEntropy = cond_entropy(V, A, K);
 
 %% plot functions
 function bubbleplot(lat, lon)

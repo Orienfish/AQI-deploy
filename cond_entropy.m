@@ -1,5 +1,5 @@
-function [senseQual] = senseQuality(Xv, Xa, K)
-%% Calculate the sensing quality at Xv given deployment Xa.
+function [condEntropy] = cond_entropy(Xv, Xa, K)
+%% Calculate the conditional entropy at Xv given deployment Xa.
 %
 % Args:
 %   Xv: list of reference locations to predict, [lat lon]
@@ -14,6 +14,6 @@ cov_va = gp_predict(Xv, Xa, K);
 n = size(cov_va, 1);
 
 % calculate the sensing quality or the conditional entropy
-senseQual = 0.5 * log(det(cov_va)) + 0.5 * n * log(2 * pi * exp(1));
+condEntropy = 0.5 * log(det(cov_va)) + 0.5 * n * log(2 * pi * exp(1));
 end
 
