@@ -1,4 +1,4 @@
-function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate)
+function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, interval)
 % Calculate the covariance matrix and correlation coefficient matrix.
 % Use the data between start date and end date.
 % 
@@ -6,7 +6,8 @@ function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate)
 %   f_list: list of files to import data from
 %   label: indicate the type of data to process
 %   sdate: the start date in string format 'dd-mm-yyyy HH-MM-SS UTC'
-%   edate: the end date in string format
+%   edate: the end date in string format 'dd-mm-yyyy HH-MM-SS UTC'
+%   interval: the sampling interval in seconds
 %
 % Return:
 %   cov_mat: covariance matrix of the data samples of the given label
@@ -20,13 +21,12 @@ formatIn = 'yyyy-mm-dd HH:MM:SS UTC';
 st_vec = datevec(datenum(sdate, formatIn)); % start time vector
 et_vec = datevec(datenum(edate, formatIn)); % end time vector
 t_secs = etime(et_vec, st_vec); % calculate the elapsed time between two vectors
-fprintf('total time length %d s\n', t_secs);
-n_obs = t_secs / (60 * 10) + 1; % count of all samples with 10 mins per sample
+n_obs = t_secs / interval + 1; % count of all samples
 
 % reserve a mat to fill in the data of the same type
 % col represent variables and rows represent observations
 mat = NaN(n_obs, length(f_list));
-fprintf('mat size %d x %d\n', n_obs, length(f_list));
+fprintf('observation mat size %d x %d\n', n_obs, length(f_list));
 
 for f_idx = 1:length(f_list)
     % obtain the list of data files
@@ -42,7 +42,7 @@ for f_idx = 1:length(f_list)
         cdate = T.created_at(i);
         curt_vec = datevec(datenum(cdate, formatIn)); % current time vector
         t_secs = etime(curt_vec, st_vec);
-        idx = t_secs / (60 * 10) + 1;
+        idx = t_secs / interval + 1;
         %fprintf("%d %d\n", t_secs, idx);
         switch label
             % the function can only deal with one label at one time
