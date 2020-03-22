@@ -93,11 +93,8 @@ figure();
 plot(K, x, y);
 
 %% Get the estimated mean and cov at V
-[mean_va, cov_va] = gp_predict_knownA(V, D, mean_pm2_5, cov_mat_pm2_5, K);
-figure('Position', [0 0 1000 800]);
-gb = geodensityplot(V(:, 1), V(:, 2), mean_va); % plot density plot for mean
-figure();
-h = heatmap(cov_va); % plot heatmap for the cov matrix
+[mean_vd, cov_vd] = gp_predict_knownA(V, D, mean_pm2_5, cov_mat_pm2_5, K);
+bubbleplot_wsize(V(:, 1), V(:, 2), mean_vd);
 
 %% Generate a random A
 A = zeros(m_A, 2);
@@ -111,10 +108,15 @@ sizedata = ones(m_A + n_V, 1); % uniform size
 colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
 bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
     sizedata, colordata);
+% get the estimated mean and cov at A
+[mean_ad, cov_ad] = gp_predict_knownA(A, D, mean_pm2_5, cov_mat_pm2_5, K);
+bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad);
 
 %% Evaluate uncertainty or conditional entropy
 condEntropy = cond_entropy(V, A, K);
-fprintf('conditional entropy %f\n', condEntropy);
+condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
+fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
+fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
 
 %% plot functions
 function bubbleplot(lat, lon)
