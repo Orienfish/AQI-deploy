@@ -8,7 +8,7 @@ function [condEntropy] = cond_entropy(Xv, Xa, K)
 %   K: the fitted RBF kernel function
 %
 % Return:
-%   senseQual: the predicted sensing quality at Xv given Xa
+%   condEntropy: the predicted conditional entropy at Xv given Xa
 
 % calculate the covariance matrix at Xv given Xa
 cov_va = gp_predict(Xv, Xa, K);

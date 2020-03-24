@@ -4,13 +4,13 @@ function [condEntropy] = cond_entropy_d(Xv, cov_vd, Xa, cov_ad, K)
 %
 % Args:
 %   Xv: list of reference locations to predict, [lat lon]
-%   cov_vd: cov matrix at Xv given pre-deployment D
+%   cov_vd: cov matrix at Xv given pre-deployment Dß
 %   Xa: list of locations we are supposed to observe, [lat lon]
 %   cov_ad: cov matrix at Xa given pre-deployment D
 %   K: the fitted RBF kernel function
 %
 % Return:
-%   senseQual: the predicted sensing quality at Xv given Xa
+%   condEntropy: the predicted conditional entropy at Xv given Xa
 
 % calculate the covariance matrix at Xv given Xa
 Sigma_VA = gen_Sigma(Xv, Xa, K);

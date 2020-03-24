@@ -121,6 +121,8 @@ condEntropy = cond_entropy(V, A, K);
 condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
 fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
 fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
+senseQuality = sense_quality(V, cov_vd, A, cov_ad, K);
+fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
 
 %% plot functions
 function bubbleplot(lat, lon, title)
