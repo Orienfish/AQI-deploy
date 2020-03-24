@@ -1,15 +1,13 @@
-function [senseQuality] = sense_quality(Xv, cov_vd, Xa, cov_ad, K, c, R)
+function [senseQuality] = sense_quality(Xv, cov_vd, Xa, cov_ad, K)
 %% Compute the sensing quality at Xv given Xa, all given pre-deployment Xd.
 %  Use the pre-deployment variance data.
 %
 % Args:
-%   Xv: list of reference locations to predict, [lat lon]ß
+%   Xv: list of reference locations to predict, [lat lon]
 %   cov_vd: cov matrix at Xv given pre-deployment D
 %   Xa: list of locations we are supposed to observe, [lat lon]
 %   cov_ad: cov matrix at Xa given pre-deployment D
 %   K: the fitted RBF kernel function
-%   c: position of the sink in [lat los]
-%   R: communication range of the sensors in km
 %
 % Return:
 %   senseQuality: the predicted sensing quality at Xv given Xa

@@ -6,7 +6,7 @@ function [t0] = mttf_tddb(V, Tc, P)
 %   P: average power in W
 % 
 % Return:
-%   t0: estimated lifetime in h, longer with higher temperature
+%   t0: estimated lifetime in years
 % required constants
 a = 78.0;
 b = -0.081;
