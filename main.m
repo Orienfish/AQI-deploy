@@ -11,7 +11,8 @@ addpath('./lldistkm/');
 m_A = 10;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
-interval = 60 * 10; % 10 mins
+thres = 1e3; % a threshold used to filter out outliers
+interval = 60 * 10; % 10 mins = 600 secs
 
 %% pre-process
 % get the mean, var and count of each type of data
@@ -22,17 +23,19 @@ if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
 else
     % if no file exists yet, do pre-process and save it to file
-    dataT = preprocess(f_list, dataT_sav);
+    dataT = preprocess(f_list, dataT_sav, thres);
 end
 toc
 % bubble plot for pre-deployment D on pm2.5
 D_lat = vertcat(dataT.lat(:));
 D_lon = vertcat(dataT.lon(:));
 D = horzcat(D_lat, D_lon);
-sizedata = horzcat(dataT.pm2_5_avg(:));
-bubbleplot_wsize(D(:, 1), D(:, 2), sizedata);
+mean_data = horzcat(dataT.pm2_5_avg(:));
+var_data = horzcat(dataT.pm2_5_var(:));
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_data, var_data, ...
+    'pm2.5 of pre-deployment');
 
-%% get the region range, set grid unit and obtain V
+% get the region range, set grid unit and obtain V
 latUpper = max(D_lat);
 latLower = min(D_lat);
 lonUpper = max(D_lon);
@@ -54,7 +57,7 @@ end
 fprintf('Generate V with size %d x %d \n', n_latV, n_lonV);
 % bubbleplot(V(:, 1), V(:, 2));
 
-%% obtain mean vector and covariance matrix and correlation matrix of certain data types
+% obtain mean vector and covariance matrix and correlation matrix of certain data types
 mean_pm2_5 = vertcat(dataT.pm2_5_avg(:)); % mean
 cov_mat_pm2_5_sav = './data/cov_mat_pm2_5.csv';
 corr_mat_pm2_5_sav = './data/corr_mat_pm2_5.csv';
@@ -64,12 +67,11 @@ if exist(cov_mat_pm2_5_sav, 'file') && exist(corr_mat_pm2_5_sav, 'file')
     corr_mat_pm2_5 = readmatrix(corr_mat_pm2_5_sav);
 else
 [cov_mat_pm2_5, corr_mat_pm2_5] = cov_matrix(f_list, 'pm2_5', ...
-    sdate, edate, interval, cov_mat_pm2_5_sav, corr_mat_pm2_5_sav);
+    sdate, edate, interval, cov_mat_pm2_5_sav, corr_mat_pm2_5_sav, thres);
 end
 toc
 figure();
 h = heatmap(cov_mat_pm2_5);
-
 
 %% fit the RBF kernel
 % iteration through each location pair
@@ -91,12 +93,14 @@ end
 K = fit(x, y, 'exp1');
 figure();
 plot(K, x, y);
+title('Fitting RBF Kernel');
 
-%% Get the estimated mean and cov at V
+%% Generate V and A
+% Get the estimated mean and cov at V
 [mean_vd, cov_vd] = gp_predict_knownA(V, D, mean_pm2_5, cov_mat_pm2_5, K);
-bubbleplot_wsize(V(:, 1), V(:, 2), mean_vd);
+bubbleplot_wsize(V(:, 1), V(:, 2), mean_vd, diag(cov_vd), 'V given D');
 
-%% Generate a random A
+% Generate a random A
 A = zeros(m_A, 2);
 pd_lat = makedist('Uniform', 'lower', latLower, 'upper', latUpper);
 pd_lon = makedist('Uniform', 'lower', lonLower, 'upper', lonUpper);
@@ -107,35 +111,38 @@ end
 sizedata = ones(m_A + n_V, 1); % uniform size
 colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
 bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
-    sizedata, colordata);
+    sizedata, colordata, 'V and A');
 % get the estimated mean and cov at A
 [mean_ad, cov_ad] = gp_predict_knownA(A, D, mean_pm2_5, cov_mat_pm2_5, K);
-bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad);
+bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad, diag(cov_ad), 'A given D');
 
-%% Evaluate uncertainty or conditional entropy
+% Evaluate uncertainty or conditional entropy
 condEntropy = cond_entropy(V, A, K);
 condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
 fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
 fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
 
 %% plot functions
-function bubbleplot(lat, lon)
+function bubbleplot(lat, lon, title)
     % plot the locations
     figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon);
+    gb = geobubble(lat, lon, 'Title', title);
     %geobasemap streets-light; % set base map style
 end
 
-function bubbleplot_wsize(lat, lon, sizedata)
+function bubbleplot_wsize(lat, lon, mean, var, title)
     % plot the locations
-    figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon, sizedata);
+    figure('Position', [0 0 2000 800]);
+    subplot(1, 2, 1);
+    gb = geobubble(lat, lon, mean, 'Title', title);
+    subplot(1, 2, 2);
+    gb = geobubble(lat, lon, var, 'Title', title);
     %geobasemap streets-light; % set base map style
 end
 
-function bubbleplot_wcolor(lat, lon, sizedata, colordata)
+function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
     % plot the locations
     figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon, sizedata, colordata);
+    gb = geobubble(lat, lon, sizedata, colordata, 'Title', title);
     %geobasemap streets-light; % set base map style
 end

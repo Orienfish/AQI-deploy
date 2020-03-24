@@ -1,5 +1,5 @@
 function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, ...
-    interval, cov_mat_sav, corr_mat_sav)
+    interval, cov_mat_sav, corr_mat_sav, thres)
 % Calculate the covariance matrix and correlation coefficient matrix.
 % Use the data between start date and end date.
 % 
@@ -11,6 +11,7 @@ function [cov_mat, corr_mat] = cov_matrix(f_list, label, sdate, edate, ...
 %   interval: the sampling interval in seconds
 %   cov_mat_sav: the name of file to save extracted cov mat
 %   corr_mat_sav: the name of file to save extracted corr mat
+%   thres: a threshold used to filter out outliers
 %
 % Return:
 %   cov_mat: covariance matrix of the data samples of the given label
@@ -41,28 +42,31 @@ for f_idx = 1:length(f_list)
     T = readtable(f_path, 'Delimiter', ',', 'HeaderLines', 0);
     
     for i = 1:height(T)
-        % convert the date to index
+        % convert the date to the index to fill in mat
         cdate = T.created_at(i);
         curt_vec = datevec(datenum(cdate, formatIn)); % current time vector
         t_secs = etime(curt_vec, st_vec);
         idx = t_secs / interval + 1;
         %fprintf("%d %d\n", t_secs, idx);
-        switch label
+        switch label % choose the data of the given label
             % the function can only deal with one label at one time
             case 'temp'
-                % fill in the data
-                mat(idx, f_idx) = T.Temperature_F(i);
+                target = T.Temperature_F(i);
             case 'humid'
-                mat(idx, f_idx) = T.Humidity__(i);
+                target = T.Humidity__(i);
             case 'pm1'
-                mat(idx, f_idx) = T.PM1_0_CF1_ug_m3(i);
+                target = T.PM1_0_CF1_ug_m3(i);
             case 'pm2_5'
-                mat(idx, f_idx) = T.PM2_5_CF1_ug_m3(i);
+                target = T.PM2_5_CF1_ug_m3(i);
             case 'pm10'
-                mat(idx, f_idx) = T.PM10_0_CF1_ug_m3(i);
+                target = T.PM10_0_CF1_ug_m3(i);
             otherwise
                 fprintf('Invalid label!');
                 return;
+        end
+        % fill the data to matrix only when it is less than the threshold
+        if target < thres
+            mat(idx, f_idx) = target;
         end
     end
 end
