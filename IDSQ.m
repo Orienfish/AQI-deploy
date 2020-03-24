@@ -31,12 +31,13 @@ for p = 1:length(valid_idx)
         valid_idx(p) = 1; % add the sensor to valid list
         commMST(n_V+1, p) = d1km; % update comm. graph
     end
+end
 
 % start the greedy selection of best m_A sensors
 for i = 1:m_A
     % print all valid indexes in this round
     fprintf('valid indexes in round %d:\n', i);
-    for a = 1:length(valid_idx)
+    for q = 1:length(valid_idx)
         if valid_idx(q) == 1
             fprintf('%d ', q);
         end
@@ -53,18 +54,19 @@ for i = 1:m_A
             Xa_idx(j) = 1;
             
             % calculate the current sensing quality
-            X_candidate = Xv(~Xa_idx, :);
-            fprintf('size of X_candidate: %d\n', size(X_candidate, 1));
-            cov_candidate = cov_vd(~Xa_idx, ~Xa_idx);
-            fprintf('size of cov_candidate: %d x %d\n', size(cov_candidate, 1), ...
-                size(cov_candidate, 2));
-            Xa = Xv(Xa_idx, :);
-            Ta = Tv(Xa_idx, :);
-            cov_Xa = cov_vd(Xa_idx, Xa_idx);
-            fprintf('size of cov_Xa: %d x %d\n', size(cov_Xa, 1), ...
-                size(cov_Xa, 2));
-            curF = sense_Quality(X_candidate, cov_candidate, Xa, cov_Xa, K);
-            curRes = alpha * (curF - lastF) + (1 - alpha) * maintain_cost(Xa, Ta, commMST);
+            X_remain = Xv(~Xa_idx, :);
+            fprintf('size of X_remain: %d\n', size(X_remain, 1));
+            cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
+            fprintf('size of cov_remain: %d x %d\n', size(cov_remain, 1), ...
+                size(cov_remain, 2));
+            Xa_cur = Xv(Xa_idx, :);
+            Ta_cur = Tv(Xa_idx, :);
+            cov_Xa_cur = cov_vd(Xa_idx, Xa_idx);
+            fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
+                size(cov_Xa_cur, 2));
+            curF = sense_Quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
+            curRes = alpha * (curF - lastF) + (1 - alpha) * ...
+                maintain_cost(Xa_cur, Ta_cur, commMST);
             
             % compare and update
             if curRes > maxRes

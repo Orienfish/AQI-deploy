@@ -30,7 +30,7 @@ n_obs = t_secs / interval + 1; % count of all samples
 % reserve a mat to fill in the data of the same type
 % col represent variables and rows represent observations
 mat = NaN(n_obs, length(f_list));
-fprintf('observation mat size %d x %d\n', n_obs, length(f_list));
+fprintf('In cov_matrix: observation mat size %d x %d\n', n_obs, length(f_list));
 
 for f_idx = 1:length(f_list)
     % obtain the list of data files
