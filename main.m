@@ -33,8 +33,7 @@ D_lon = vertcat(dataT.lon(:));
 D = horzcat(D_lat, D_lon);
 mean_data = horzcat(dataT.pm2_5_avg(:));
 var_data = horzcat(dataT.pm2_5_var(:));
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_data, var_data, ...
-    'pm2.5 of pre-deployment');
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_data, var_data, 'pm2.5 of pre-deployment');
 
 % get the region range, set grid unit and obtain V
 latUpper = max(D_lat);
@@ -60,6 +59,7 @@ fprintf('Generate V with size %d x %d \n', n_latV, n_lonV);
 % bubbleplot(V(:, 1), V(:, 2));
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
+% pm2_5
 mean_pm2_5 = vertcat(dataT.pm2_5_avg(:)); % mean
 cov_mat_pm2_5_sav = './data/cov_mat_pm2_5.csv';
 corr_mat_pm2_5_sav = './data/corr_mat_pm2_5.csv';
@@ -75,56 +75,60 @@ toc
 figure();
 h = heatmap(cov_mat_pm2_5);
 
-%% fit the RBF kernel
-% iteration through each location pair
-nPair = (length(f_list) * (length(f_list) - 1)) / 2; % total number of pairs
-x = zeros(nPair, 1);
-y = zeros(nPair, 1);
-idx = 1;
-for l1 = 1:length(f_list)
-    for l2 = l1+1:length(f_list)
-        latlon1 = [dataT.lat(l1) dataT.lon(l1)];
-        latlon2 = [dataT.lat(l2) dataT.lon(l2)];
-        [d1km, d2km] = lldistkm(latlon1, latlon2);
-        x(idx) = d1km * 1000; % use d1 distance, convert to meters
-        y(idx) = cov_mat_pm2_5(l1, l2);
-        idx = idx + 1;
-    end
+% temp
+mean_temp = vertcat(dataT.temp_avg(:)); % mean
+cov_mat_temp_sav = './data/cov_mat_temp.csv';
+corr_mat_temp_sav = './data/corr_mat_temp.csv';
+tic
+if exist(cov_mat_temp_sav, 'file') && exist(corr_mat_temp_sav, 'file')
+    cov_mat_temp = readmatrix(cov_mat_temp_sav);
+    corr_mat_temp = readmatrix(corr_mat_temp_sav);
+else
+[cov_mat_temp, corr_mat_temp] = cov_matrix(f_list, 'temp', ...
+    sdate, edate, interval, cov_mat_temp_sav, corr_mat_temp_sav, thres);
 end
-% General model Exp1: f(x) = a*exp(b*x)
-K = fit(x, y, 'exp1');
-figure();
-plot(K, x, y);
-title('Fitting RBF Kernel');
+toc
+
+%% fit the RBF kernel for certain data types
+K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
+
+K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% Generate V and A
 % Get the estimated mean and cov at V
-[mean_vd, cov_vd] = gp_predict_knownA(V, D, mean_pm2_5, cov_mat_pm2_5, K);
-bubbleplot_wsize(V(:, 1), V(:, 2), mean_vd, diag(cov_vd), 'V given D');
+[pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
+
+[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
+bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
 
 % Generate a random A
-A = zeros(m_A, 2);
-pd_lat = makedist('Uniform', 'lower', latLower, 'upper', latUpper);
-pd_lon = makedist('Uniform', 'lower', lonLower, 'upper', lonUpper);
-for i = 1:m_A
-    A(i, :) = [random(pd_lat) random(pd_lon)];
-end
+%A = zeros(m_A, 2);
+%pd_lat = makedist('Uniform', 'lower', latLower, 'upper', latUpper);
+%pd_lon = makedist('Uniform', 'lower', lonLower, 'upper', lonUpper);
+%for i = 1:m_A
+%    A(i, :) = [random(pd_lat) random(pd_lon)];
+%end
 % plot V and A on one map
-sizedata = ones(m_A + n_V, 1); % uniform size
-colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
-bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
-    sizedata, colordata, 'V and A');
+%sizedata = ones(m_A + n_V, 1); % uniform size
+%colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
+%bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
+%    sizedata, colordata, 'V and A');
 % get the estimated mean and cov at A
-[mean_ad, cov_ad] = gp_predict_knownA(A, D, mean_pm2_5, cov_mat_pm2_5, K);
-bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad, diag(cov_ad), 'A given D');
+%[mean_ad, cov_ad] = gp_predict_knownA(A, D, mean_pm2_5, cov_mat_pm2_5, K);
+%bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad, diag(cov_ad), 'A given D');
 
 % Evaluate uncertainty or conditional entropy
-condEntropy = cond_entropy(V, A, K);
-condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
-fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
-fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
-senseQuality = sense_quality(V, cov_vd, A, cov_ad, K);
-fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
+%condEntropy = cond_entropy(V, A, K);
+%condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
+%fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
+%fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
+%senseQuality = sense_quality(V, cov_vd, A, cov_ad, K);
+%fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
+
+%% Call the greedy heuristic IDSQ
+Tv_cel = fah2cel(temp_mean_vd);
+A = IDSQ(m_A, V, cov_vd, Tv_cel, K_pm2_5, alpha, c, R);
 
 %% plot functions
 function bubbleplot(lat, lon, title)
