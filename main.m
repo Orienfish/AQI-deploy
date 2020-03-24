@@ -11,8 +11,9 @@ addpath('./lldistkm/');
 m_A = 10;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
-thres = 1e3; % a threshold used to filter out outliers
-interval = 60 * 10; % 10 mins = 600 secs
+thres = 1e3;                       % a threshold used to filter out outliers
+interval = 60 * 10;                % 10 mins = 600 secs
+R = 20;                            % communication range of sensors in km
 
 %% pre-process
 % get the mean, var and count of each type of data
@@ -41,6 +42,7 @@ latLower = min(D_lat);
 lonUpper = max(D_lon);
 lonLower = min(D_lon);
 gridUnit = 0.05; % adjustable
+c = [(latUpper + latLower) / 2, (lonUpper + lonLower) / 2]; % sink position
 n_latV = floor((latUpper - latLower) / gridUnit);
 n_lonV = floor((lonUpper - lonLower) / gridUnit);
 V_lat = linspace(latLower, latUpper, n_latV);
