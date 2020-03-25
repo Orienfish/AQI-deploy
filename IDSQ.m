@@ -68,6 +68,7 @@ for i = 1:m_A
             MST_idx = logical(vertcat(Xa_idx, [1]));
             commMST_cur = commMST(MST_idx, MST_idx);
             curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
+            fprintf('sensing quality gain is %f\n', curF - lastF);
             curRes = alpha * (curF - lastF) + (1 - alpha) * ...
                 maintain_cost(Xa_cur, Ta_cur, commMST_cur);
             

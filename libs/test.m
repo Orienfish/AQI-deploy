@@ -56,7 +56,7 @@ title('MTTF of TDDB under various ambient temperature');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Pto = 0.52;       % 520mW
 n_dist = 41;
-dist = linspace(0, 40, n_dist);
+dist = linspace(0, 10, n_dist);
 Ptx = zeros(1, n_dist);
 for i = 1:n_dist
     Ptx(i) = txPower(dist(i), Pto);

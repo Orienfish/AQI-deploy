@@ -23,8 +23,8 @@ trx = Lrx / Brx;
 
 % calculate total energy and power in one period
 energy = Ptx * ttx + Prx * trx + Psen * tsen + Pslp * (T - ttx - trx - tsen);
-% fprintf('tx energy: %f rx energy: %f sleep energy: %f\n', ...
-%    Ptx * ttx, Prx * trx, Pslp * (T - ttx - trx));
 avgPwr = energy / T;
+fprintf('tx power: %f, rx power: %f, sense power: %f, sleep power: %f\n', ...
+    Ptx * ttx / T, Prx * trx / T, Psen * tsen / T, Pslp * (T - ttx - trx) / T);
 end
 
