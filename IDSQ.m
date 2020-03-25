@@ -16,8 +16,8 @@ function [Xa] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
 addpath('./libs/');
 addpath('./lldistkm/');
 n_V = size(Xv, 1); % number of reference locations Xv
-valid_idx = zeros(1, n_V); % a list of valid indexes in comm. range
-Xa_idx = zeros(1, n_V); % init idx list for Xa to all zero
+valid_idx = zeros(n_V, 1); % a list of valid indexes in comm. range
+Xa_idx = zeros(n_V, 1); % init idx list for Xa to all zero
 lastF = 0.0; % sensing quality in last round of greedy selection
 commMST = NaN(n_V + 1); % init a matrix for connection graph
                         % first n entries are for Xv, the last one is for 
@@ -59,14 +59,17 @@ for i = 1:m_A
             cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
             fprintf('size of cov_remain: %d x %d\n', size(cov_remain, 1), ...
                 size(cov_remain, 2));
-            Xa_cur = Xv(Xa_idx, :);
-            Ta_cur = Tv(Xa_idx, :);
-            cov_Xa_cur = cov_vd(Xa_idx, Xa_idx);
+            Xa_cur = Xv(logical(Xa_idx), :);
+            Ta_cur = Tv(logical(Xa_idx), :);
+            cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
+            fprintf('size of X_cur: %d\n', size(Xa_cur, 1));
             fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
                 size(cov_Xa_cur, 2));
-            curF = sense_Quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
+            MST_idx = logical(vertcat(Xa_idx, [1]));
+            commMST_cur = commMST(MST_idx, MST_idx);
+            curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
             curRes = alpha * (curF - lastF) + (1 - alpha) * ...
-                maintain_cost(Xa_cur, Ta_cur, commMST);
+                maintain_cost(Xa_cur, Ta_cur, commMST_cur);
             
             % compare and update
             if curRes > maxRes
@@ -84,7 +87,8 @@ for i = 1:m_A
     if maxRes > 0
         Xa_idx(maxRes_idx) = 1; % add the sensors to the list
         lastF = maxF;
-        fprintf('The selection in round %d is %d\n', i, maxRes_idx);
+        fprintf('The selection in round %d is %d: [%f %f]\n', ...
+            i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
         
         % update the valid indexes
         for k = 1:length(valid_idx)
@@ -103,6 +107,6 @@ for i = 1:m_A
         error('No valid indexes to select!');
     end
 end
-Xa = Xv(Xa_idx, :);
+Xa = Xv(logical(Xa_idx), :);
 end
 
