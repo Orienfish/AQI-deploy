@@ -21,6 +21,6 @@ Tcore = temp_amb2core(Tc, P);
 Tk = Tcore + 273.15; % convert from Celsius to Kelvin
 %fprintf("%f, %f\n", Tcore, Tk);
 t0 = c * (1/V)^(a-b*Tk) * exp((X+(Y/Tk)+Z*Tk)/(k*Tk));
-%fprintf("%f\n", t0);
+% fprintf("%f\n", t0);
 end
 

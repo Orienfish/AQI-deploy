@@ -9,7 +9,7 @@ addpath('./lldistkm/');
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 10;
+m_A = 2;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -73,8 +73,6 @@ else
     sdate, edate, interval, cov_mat_pm2_5_sav, corr_mat_pm2_5_sav, thres);
 end
 toc
-figure();
-h = heatmap(cov_mat_pm2_5);
 
 % temp
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
@@ -90,6 +88,8 @@ else
     sdate, edate, interval, cov_mat_temp_sav, corr_mat_temp_sav, thres);
 end
 toc
+figure();
+h = heatmap(cov_mat_temp);
 
 %% fit the RBF kernel for certain data types
 fprintf('Fitting the RBF kernel...\n');
@@ -101,9 +101,25 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
 bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
+%[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
+Xv = V;
+Xd = D;
+K = K_temp;
+mean_d = mean_temp;
+cov_d = cov_mat_temp;
+cov_d_inv = inv(cov_d);
+% calculate Sigma_VD, Sigma_DV and Sigma_VV
+Sigma_VD = gen_Sigma(Xv, Xd, K);
+Sigma_DV = Sigma_VD';
+Sigma_VV = gen_Sigma(Xv, Xv, K);
+
+% calculate mean vector and covariance matrix
+temp_mean_vd = Sigma_VD * cov_d_inv * mean_d;
+temp_cov_vd = Sigma_VV - Sigma_VD * cov_d_inv * Sigma_DV;
 bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
 bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
+
+temp_mean_vd = temp_mean_vd / 4 + 180;
 
 % Generate a random A
 %A = zeros(m_A, 2);
@@ -212,7 +228,8 @@ for i = 1:m_A
     if maxRes > 0
         Xa_idx(maxRes_idx) = 1; % add the sensors to the list
         lastF = maxF;
-        fprintf('The selection in round %d is %d\n', i, maxRes_idx);
+        fprintf('The selection in round %d is %d: [%f %f]\n', ...
+            i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
         
         % update the valid indexes
         for k = 1:length(valid_idx)

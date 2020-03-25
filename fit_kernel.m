@@ -10,7 +10,6 @@ function [K] = fit_kernel(lat, lon, cov_mat, type)
 % Return:
 %   K: the fitted kernel function
 
-% pm2_5
 % iteration through each location pair
 n = length(lat); % total number of locations
 nPair = (n * (n - 1)) / 2; % total number of pairs

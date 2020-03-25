@@ -1,4 +1,6 @@
 % Test every functions
+close all;
+clear;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test battery lifetime function, plot out the lifetime at various temp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -52,30 +54,39 @@ title('MTTF of TDDB under various ambient temperature');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test transmission power consumption under different distance
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Pto = 0.52;       % 520mW
 n_dist = 41;
-dist = linspace(0, 400, n_dist);
+dist = linspace(0, 40, n_dist);
 Ptx = zeros(1, n_dist);
 for i = 1:n_dist
-    Ptx(i) = txPower(dist(i));
+    Ptx(i) = txPower(dist(i), Pto);
 end
 figure(4);
 plot(dist, Ptx);
 title('Average transmission power under various distance');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% test average power consumption under different distance
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Btx = 2500; % 20kbps = 2500B/s
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test average power consumption and tddb lifetime under different distance
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Btx = 2500;       % 20kbps = 2500B/s
 Brx = 2500;
-Ltx = 1e3; % 1kB
+Ltx = 1e3;        % 1kB
 Lrx = 1e3;
-Prx = 22.2e-3; % 22.2mW
-Pslp = 1e-4; % 0.1mW
-T = 1; % 1s
+Prx = 0.1;        % 100mW
+Psen = 0.2;       % 200mW
+tsen = 0.3;       % 300ms
+Pslp = 52.2*1e-3; % 52.2mW
+T = 10;           % 10s
 avgPwr = zeros(1, n_dist);
+MTTF_dist = zeros(1, n_dist);
 for i = 1:n_dist
-    avgPwr(i) = avgPower(dist(i), Btx, Ltx, Brx, Lrx, Prx, Pslp, T);
+    avgPwr(i) = avgPower(dist(i), Btx, Ltx, Pto, Brx, Lrx, Prx, ...
+        Psen, tsen, Pslp, T);
+    MTTF_dist(i) = mttf_tddb(1.1, 25, avgPwr(i));
 end
 figure(5);
 plot(dist, avgPwr);
 title('Average total power under various distance');
+figure(5);
+plot(dist, MTTF_dist);
+title('Average tddb lifetime under various distance');
