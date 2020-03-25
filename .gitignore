@@ -27,3 +27,6 @@ octave-workspace
 
 # mac
 .DS_Store
+
+# log
+*.txt
