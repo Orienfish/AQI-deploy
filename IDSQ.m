@@ -1,4 +1,4 @@
-function [Xa] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
+function [Xa, commMST] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
@@ -13,6 +13,7 @@ function [Xa] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
 %
 % Return:
 %   Xa: a list of solution locations to place sensors
+%   commMST: the generated communication graph
 addpath('./libs/');
 addpath('./lldistkm/');
 n_V = size(Xv, 1); % number of reference locations Xv
@@ -65,6 +66,7 @@ for i = 1:m_A
             fprintf('size of X_cur: %d\n', size(Xa_cur, 1));
             fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
                 size(cov_Xa_cur, 2));
+            % pass only the MST of selected sensors
             MST_idx = logical(vertcat(Xa_idx, [1]));
             commMST_cur = commMST(MST_idx, MST_idx);
             curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
@@ -108,6 +110,10 @@ for i = 1:m_A
         error('No valid indexes to select!');
     end
 end
+% return the final selection solution
 Xa = Xv(logical(Xa_idx), :);
+% pass only the MST of selected sensors
+MST_idx = logical(vertcat(Xa_idx, [1]));
+commMST = commMST(MST_idx, MST_idx);
 end
 

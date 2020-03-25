@@ -149,13 +149,14 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 fprintf('Calling IDSQ...\n');
 IDSQ_alpha = 0.6;
 Tv_cel = fah2cel(temp_mean_vd);
-A = IDSQ(m_A, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
+[A, commMST] = IDSQ(m_A, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
+plot_solution(A, commMST, c, [latLower, latUpper, lonLower, lonUpper]);
 
 %% plot functions
 function bubbleplot(lat, lon, title)
     % plot the locations
     figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon, 'Title', title);
+    geobubble(lat, lon, 'Title', title);
     %geobasemap streets-light; % set base map style
 end
 
@@ -163,15 +164,32 @@ function bubbleplot_wsize(lat, lon, mean, var, title)
     % plot the locations
     figure('Position', [0 0 2000 800]);
     subplot(1, 2, 1);
-    gb = geobubble(lat, lon, mean, 'Title', title);
+    geobubble(lat, lon, mean, 'Title', title);
     subplot(1, 2, 2);
-    gb = geobubble(lat, lon, var, 'Title', title);
+    geobubble(lat, lon, var, 'Title', title);
     %geobasemap streets-light; % set base map style
 end
 
 function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
     % plot the locations
     figure('Position', [0 0 1000 800]);
-    gb = geobubble(lat, lon, sizedata, colordata, 'Title', title);
+    geobubble(lat, lon, sizedata, colordata, 'Title', title);
     %geobasemap streets-light; % set base map style
+end
+
+function plot_solution(A, commMST, c, limits)
+    figure();
+    geoaxes('NextPlot','add');
+    % generate list of nodes including the sink
+    nodes = vertcat(A, c);
+    % plot connections from commMST
+    % geolimits(limits(1:2), limits(3:4));
+    for i = 1:size(commMST, 1)
+        for j = 1:size(commMST, 2)
+            if ~isnan(commMST(i, j))
+                geoplot([nodes(i, 1) nodes(j, 1)], ...
+                    [nodes(i, 2) nodes(j, 2)], 'b-*', 'LineWidth', 2);
+            end
+        end
+    end   
 end
