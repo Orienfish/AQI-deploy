@@ -11,7 +11,8 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-Cm = 6;
+m_A = 20;
+Cm = 8;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -150,7 +151,7 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 fprintf('Calling IDSQ...\n');
 IDSQ_alpha = 0.6;
 Tv_cel = fah2cel(temp_mean_vd);
-[A, commMST] = IDSQ(Cm, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
+[A, commMST] = IDSQ(m_A, Cm, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
 plot_solution(A, commMST, c);
 
 %% plot functions

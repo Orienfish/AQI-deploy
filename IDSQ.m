@@ -1,7 +1,8 @@
-function [Xa, commMST] = IDSQ(Cm, Xv, cov_vd, Tv, K, alpha, c, R)
+function [Xa, commMST] = IDSQ(m_A, Cm, Xv, cov_vd, Tv, K, alpha, c, R)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
+%   m_A: number of sensors to deploy
 %   Cm: maintenance cost budget
 %   Xv: a list of candidate locations to choose from
 %   cov_vd: cov matrix at Xv given pre-deployment D
@@ -37,10 +38,9 @@ for p = 1:length(valid_idx)
 end
 
 % start the greedy selection of best m_A sensors
-round = 1;
-while 1
+for i = 1:m_A
     % print all valid indexes in this round
-    fprintf('valid indexes in round %d:\n', round);
+    fprintf('valid indexes in round %d:\n', i);
     for q = 1:length(valid_idx)
         if valid_idx(q) == 1
             fprintf('%d ', q);
@@ -75,13 +75,13 @@ while 1
             commMST_cur = commMST(MST_idx, MST_idx);
             % combine all together
             curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
-            fprintf('sensing quality gain at node %d is %f\n', j, curF - lastF);
+            fprintf('sensing quality with node %d is %f\n', j, curF);
             curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur);
-            fprintf('maintenance cost gain at node %d is %f\n', j, curM - lastM);
+            fprintf('maintenance cost with node %d is %f\n', j, curM);
             curRes = alpha * (curF - lastF) + (1 - alpha) * (curM - lastM);
             
             % compare and update
-            if curRes > maxRes
+            if curRes > maxRes && curM < Cm
                 maxRes = curRes;
                 maxRes_idx = j;
                 maxF = curF;
@@ -99,8 +99,7 @@ while 1
         lastF = maxF;
         lastM = maxM;
         fprintf('The selection in round %d is %d: [%f %f]\n', ...
-            round, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
-        round = round + 1;
+            i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
         
         % update the valid indexes
         for k = 1:length(valid_idx)
@@ -117,11 +116,6 @@ while 1
         end
     else
         error('No valid indexes to select!');
-    end
-    
-    % check break condition
-    if lastM > Cm
-        break;
     end
 end
 % return the final selection solution
