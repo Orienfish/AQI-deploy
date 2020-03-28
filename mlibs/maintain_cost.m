@@ -34,8 +34,8 @@ C = 0;            % total maintenance cost
 
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
-    fprintf('ambient temperature at node [%f %f] is %f Celsius\n', ...
-        Xa(i, 1), Xa(i, 2), Ta(i));
+    %fprintf('ambient temperature at node [%f %f] is %f Celsius\n', ...
+    %    Xa(i, 1), Xa(i, 2), Ta(i));
     % estimate power in W
     txDist_km = commMST(~isnan(commMST(:, i)), i); % get the unique non-nan
     txDist_m = txDist_km / 1000;  % convert to meters
@@ -45,25 +45,25 @@ for i = 1:size(Xa, 1)
     child_cnt = nnz(~isnan(commMST(i, :))); % get child cnt of node i
     avgPwr = avgPower(txDist_m, Btx, Ltx, Pto, Brx, child_cnt * Lrx, Prx, ...
         Psen, tsen, Pslp, T);
-    fprintf('avg pwr of node [%f %f] is %f W\n', ...
-        Xa(i, 1), Xa(i, 2), avgPwr);
+    %fprintf('avg pwr of node [%f %f] is %f W\n', ...
+    %    Xa(i, 1), Xa(i, 2), avgPwr);
     
     % estimate battery lifetime in days
     I_mA = avgPwr * 1000 / V; % convert from W to mW then calculate average current draw
     batlife_h = bat_lifetime(cap_bat, Ta(i), I_mA, dt_bat_h);
     batlife_day = batlife_h / 24;
-    fprintf('battery life of node [%f %f] is %f days\n', ...
-        Xa(i, 1), Xa(i, 2), batlife_day);
+    %fprintf('battery life of node [%f %f] is %f days\n', ...
+    %    Xa(i, 1), Xa(i, 2), batlife_day);
     
     % estimate circuit lifetime in days
     cirlife_year = mttf_tddb(V_gs, Ta(i), avgPwr);
     cirlife_day = cirlife_year * 365;
-    fprintf('circuit life of node [%f %f] is %f days\n', Xa(i, 1), Xa(i, 2), cirlife_day);
+    %fprintf('circuit life of node [%f %f] is %f days\n', Xa(i, 1), Xa(i, 2), cirlife_day);
     
     % update total maintenance cost
     nodeC = c_bat / batlife_day + c_node / cirlife_day;
     C = C + nodeC;
-    fprintf('maintenance cost of node [%f %f] is %f\n', Xa(i, 1), Xa(i, 2), nodeC);
+    %fprintf('maintenance cost of node [%f %f] is %f\n', Xa(i, 1), Xa(i, 2), nodeC);
 end
 end
 

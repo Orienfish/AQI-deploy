@@ -1,8 +1,8 @@
-function [Xa, commMST] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
+function [Xa, commMST] = IDSQ(Cm, Xv, cov_vd, Tv, K, alpha, c, R)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
-%   m_A: number of sensors
+%   Cm: maintenance cost budget
 %   Xv: a list of candidate locations to choose from
 %   cov_vd: cov matrix at Xv given pre-deployment D
 %   Tv: average temperature estimation at Xv in Celsius
@@ -15,11 +15,13 @@ function [Xa, commMST] = IDSQ(m_A, Xv, cov_vd, Tv, K, alpha, c, R)
 %   Xa: a list of solution locations to place sensors
 %   commMST: the generated communication graph
 addpath('./libs/');
+addpath('./mlibs/');
 addpath('./lldistkm/');
 n_V = size(Xv, 1); % number of reference locations Xv
 valid_idx = zeros(n_V, 1); % a list of valid indexes in comm. range
 Xa_idx = zeros(n_V, 1); % init idx list for Xa to all zero
 lastF = 0.0; % sensing quality in last round of greedy selection
+lastM = 0.0; % maintenance cost in last round of greedy selection
 commMST = NaN(n_V + 1); % init a matrix for connection graph
                         % first n entries are for Xv, the last one is for 
                         % the sink c. A single-direction MST.
@@ -35,9 +37,10 @@ for p = 1:length(valid_idx)
 end
 
 % start the greedy selection of best m_A sensors
-for i = 1:m_A
+round = 1;
+while 1
     % print all valid indexes in this round
-    fprintf('valid indexes in round %d:\n', i);
+    fprintf('valid indexes in round %d:\n', round);
     for q = 1:length(valid_idx)
         if valid_idx(q) == 1
             fprintf('%d ', q);
@@ -45,9 +48,10 @@ for i = 1:m_A
     end
     fprintf('\n');
     
-    maxF = 0.0; % max sensing quality during searching
-    maxRes = 0.0; % max result during searching
-    maxRes_idx = 0; % the index of the best selection
+    maxF = -Inf; % sensing quality of max result during searching
+    maxM = -Inf; % maintenance cost of max result during searching
+    maxRes = -Inf; % max result during searching
+    maxRes_idx = -1; % the index of the best selection
     
     for j = 1:length(valid_idx)
         if valid_idx(j) == 1 && Xa_idx(j) == 0 % not select before
@@ -56,29 +60,32 @@ for i = 1:m_A
             
             % calculate the current sensing quality
             X_remain = Xv(~Xa_idx, :);
-            fprintf('size of X_remain: %d\n', size(X_remain, 1));
+            %fprintf('size of X_remain: %d\n', size(X_remain, 1));
             cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
-            fprintf('size of cov_remain: %d x %d\n', size(cov_remain, 1), ...
-                size(cov_remain, 2));
+            %fprintf('size of cov_remain: %d x %d\n', size(cov_remain, 1), ...
+            %    size(cov_remain, 2));
             Xa_cur = Xv(logical(Xa_idx), :);
             Ta_cur = Tv(logical(Xa_idx), :);
             cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
-            fprintf('size of X_cur: %d\n', size(Xa_cur, 1));
-            fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
-                size(cov_Xa_cur, 2));
+            %fprintf('size of X_cur: %d\n', size(Xa_cur, 1));
+            %fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
+            %    size(cov_Xa_cur, 2));
             % pass only the MST of selected sensors
             MST_idx = logical(vertcat(Xa_idx, [1]));
             commMST_cur = commMST(MST_idx, MST_idx);
+            % combine all together
             curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
             fprintf('sensing quality gain at node %d is %f\n', j, curF - lastF);
-            curRes = alpha * (curF - lastF) + (1 - alpha) * ...
-                maintain_cost(Xa_cur, Ta_cur, commMST_cur);
+            curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur);
+            fprintf('maintenance cost gain at node %d is %f\n', j, curM - lastM);
+            curRes = alpha * (curF - lastF) + (1 - alpha) * (curM - lastM);
             
             % compare and update
             if curRes > maxRes
                 maxRes = curRes;
                 maxRes_idx = j;
                 maxF = curF;
+                maxM = curM;
             end
             
             % reset the Xa index
@@ -87,11 +94,13 @@ for i = 1:m_A
     end
     
     % update the greedy selection
-    if maxRes > 0
+    if maxRes > -Inf
         Xa_idx(maxRes_idx) = 1; % add the sensors to the list
         lastF = maxF;
+        lastM = maxM;
         fprintf('The selection in round %d is %d: [%f %f]\n', ...
-            i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
+            round, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
+        round = round + 1;
         
         % update the valid indexes
         for k = 1:length(valid_idx)
@@ -108,6 +117,11 @@ for i = 1:m_A
         end
     else
         error('No valid indexes to select!');
+    end
+    
+    % check break condition
+    if lastM > Cm
+        break;
     end
 end
 % return the final selection solution

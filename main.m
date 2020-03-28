@@ -3,6 +3,7 @@ close all;
 clear;
 warning('off','all')
 addpath('./libs/');
+addpath('./mlibs/');
 addpath('./lldistkm/');
 diary 'log.txt';
 
@@ -10,7 +11,7 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 10;
+Cm = 6;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -149,8 +150,8 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 fprintf('Calling IDSQ...\n');
 IDSQ_alpha = 0.6;
 Tv_cel = fah2cel(temp_mean_vd);
-[A, commMST] = IDSQ(m_A, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
-plot_solution(A, commMST, c, [latLower, latUpper, lonLower, lonUpper]);
+[A, commMST] = IDSQ(Cm, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
+plot_solution(A, commMST, c);
 
 %% plot functions
 function bubbleplot(lat, lon, title)
@@ -177,13 +178,12 @@ function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
     %geobasemap streets-light; % set base map style
 end
 
-function plot_solution(A, commMST, c, limits)
+function plot_solution(A, commMST, c)
     figure();
     geoaxes('NextPlot','add');
     % generate list of nodes including the sink
     nodes = vertcat(A, c);
     % plot connections from commMST
-    % geolimits(limits(1:2), limits(3:4));
     for i = 1:size(commMST, 1)
         for j = 1:size(commMST, 2)
             if ~isnan(commMST(i, j))
