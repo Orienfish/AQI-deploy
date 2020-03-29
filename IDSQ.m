@@ -1,16 +1,16 @@
-function [Xa, commMST] = IDSQ(m_A, Cm, Xv, cov_vd, Tv, K, alpha, c, R)
+function [Xa, commMST] = IDSQ(Xv, cov_vd, Tv, params)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
-%   m_A: number of sensors to deploy
-%   Cm: maintenance cost budget
 %   Xv: a list of candidate locations to choose from
 %   cov_vd: cov matrix at Xv given pre-deployment D
 %   Tv: average temperature estimation at Xv in Celsius
-%   K: the fitted RBF kernel function
-%   alpha: the weight factor in IDSQ
-%   c: position of the sink in [lat lon]
-%   R: communication range of the sensors in km
+%   params.m_A: number of sensors to deploy
+%   params.Cm: maintenance cost budget
+%   params.K: the fitted RBF kernel function
+%   params.c: position of the sink in [lat lon]
+%   params.R: communication range of the sensors in km
+%   params.alpha: the weight factor in IDSQ
 %
 % Return:
 %   Xa: a list of solution locations to place sensors
@@ -31,15 +31,15 @@ logging = false;
 % get the valid indexes directly connected to the sink
 for p = 1:length(valid_idx)
     % check the distance to c
-    [d1km, d2km] = lldistkm(Xv(p, :), c);
-    if d1km < R
+    [d1km, d2km] = lldistkm(Xv(p, :), params.c);
+    if d1km < params.R
         valid_idx(p) = 1; % add the sensor to valid list
         commMST(n_V+1, p) = d1km; % update comm. graph
     end
 end
 
 % start the greedy selection of best m_A sensors
-for i = 1:m_A
+for i = 1:params.m_A
     % print all valid indexes in this round
     fprintf('valid indexes in round %d:\n', i);
     for q = 1:length(valid_idx)
@@ -61,28 +61,24 @@ for i = 1:m_A
             
             % calculate the current sensing quality
             X_remain = Xv(~Xa_idx, :);
-            %fprintf('size of X_remain: %d\n', size(X_remain, 1));
             cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
-            %fprintf('size of cov_remain: %d x %d\n', size(cov_remain, 1), ...
-            %    size(cov_remain, 2));
             Xa_cur = Xv(logical(Xa_idx), :);
             Ta_cur = Tv(logical(Xa_idx), :);
             cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
-            %fprintf('size of X_cur: %d\n', size(Xa_cur, 1));
-            %fprintf('size of cov_Xa_cur: %d x %d\n', size(cov_Xa_cur, 1), ...
-            %    size(cov_Xa_cur, 2));
+            
             % pass only the MST of selected sensors
             MST_idx = logical(vertcat(Xa_idx, [1]));
             commMST_cur = commMST(MST_idx, MST_idx);
             % combine all together
-            curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
+            curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, params.K);
             fprintf('sensing quality with node %d is %f\n', j, curF);
-            curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur);
-            fprintf('maintenance cost with node %d is %f\n', j, curM, logging);
-            curRes = alpha * (curF - lastF) + (1 - alpha) * (curM - lastM);
+            curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur, logging);
+            fprintf('maintenance cost with node %d is %f\n', j, curM);
+            curRes = params.alpha * (curF - lastF) + ...
+                (1 - params.alpha) * (curM - lastM);
             
             % compare and update
-            if curRes > maxRes && curM < Cm
+            if curRes > maxRes && curM < params.Cm
                 maxRes = curRes;
                 maxRes_idx = j;
                 maxF = curF;
@@ -110,7 +106,7 @@ for i = 1:m_A
         
             % check the distance to the selected sensor in this round
             [d1km, d2km] = lldistkm(Xv(k, :), Xv(maxRes_idx, :));
-            if d1km < R
+            if d1km < params.R
                 valid_idx(k) = 1; % add the sensor to valid list
                 commMST(maxRes_idx, k) = d1km; % update comm. graph
             end

@@ -21,7 +21,7 @@ interval = 60 * 10;                % 10 mins = 600 secs
 R = 10;                            % communication range of sensors in km
 
 %% pre-process
-disp('start pre-processing...\n');
+disp('start pre-processing...');
 % get the mean, var and count of each type of data
 f_list = dir('./data/*Primary*.csv'); % use all primary data
 dataT_sav = './data/dataT.csv';
@@ -96,7 +96,7 @@ figure();
 h = heatmap(cov_mat_temp);
 
 %% fit the RBF kernel for certain data types
-disp('Fitting the RBF kernel...\n');
+disp('Fitting the RBF kernel...');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
@@ -149,10 +149,15 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 %fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
 
 %% Call the greedy heuristic IDSQ
-fprintf('Calling IDSQ...\n');
-IDSQ_alpha = 0.6;
+fprintf('Calling IDSQ...');
 Tv_cel = fah2cel(temp_mean_vd);
-[A, commMST] = IDSQ(m_A, Cm, V, pm2_5_cov_vd, Tv_cel, K_pm2_5, IDSQ_alpha, c, R);
+params.m_A = m_A;
+params.Cm = Cm;
+params.K = K_pm2_5;
+params.c = c;
+params.R = R;
+params.alpha = 0.6;
+[A, commMST] = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
 plot_solution(A, commMST, c);
 
 %% plot functions
