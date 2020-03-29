@@ -1,10 +1,11 @@
-function [C] = maintain_cost(Xa, Ta, commMST, predMST, logging)
+function [C] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %% Compute the maintenance cost from a given deployment.
 %  Note deployment Xa is a complete list. Not all nodes are connected.
 %
 % Args:
 %   Xa: a given deployment list, [lat lon]
 %   Ta: average temperature estimation at Xa in Celsius 
+%   conn_idx: list of logical variables showing connection
 %   commMST: generated feasible MST for connnection
 %   predMST: the predecessor of the node
 %   logging: logging flag
@@ -37,8 +38,7 @@ C = 0;            % total maintenance cost
 
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
-    if ~isnan(predMST(i))
-        % only process those nodes that are connected
+    if conn_idx(i) % only process those nodes that are connected
         txDist_km = commMST(predMST(i), i); % get the unique non-nan
         txDist_m = txDist_km / 1000;  % convert to meters
         if isinf(txDist_km)
@@ -64,11 +64,9 @@ for i = 1:size(Xa, 1)
         C = C + nodeC;
 
         if logging
-            disp(['node [' num2str(Xa(i, 1)) ' ' num2str(Xa(i, 2)) ']']);
-            disp(['amb temp: ' num2str(Ta(i)) 'avg pwr: ' num2str(avgPwr)]);
-            disp(['bat life: ' num2str(batlife_day) ...
-                'cir life: ' num2str(cirlife_day) ...
-                'main cost: ' num2str(nodeC)]);
+            fprintf('  node %d amb temp: %f avg pwr: %f\n', i, Ta(i), avgPwr);
+            fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
+                batlife_day, cirlife_day, nodeC);
         end
     end
 end

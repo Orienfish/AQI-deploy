@@ -66,23 +66,19 @@ for i = 1:params.m_A
             X_remain = Xv(~Xa_idx, :);
             cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
             Xa_cur = Xv(logical(Xa_idx), :);
-            Ta_cur = Tv(logical(Xa_idx), :);
             cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
             
-            % pass only the MST of selected sensors
-            %MST_idx = logical(vertcat(Xa_idx, [1]));
-            %commMST_cur = commMST(MST_idx, MST_idx);
             % combine all together
             curF = sense_quality(X_remain, cov_remain, Xa_cur, ...
                 cov_Xa_cur, params.K);
-            curM = maintain_cost(Xa_cur, Ta_cur, commMST, ...
-                predMST, false);
+            curM = maintain_cost(Xv, Tv, Xa_idx, commMST, predMST, ...
+                params.logging);
             curRes = params.IDSQ_alpha * (curF - lastF) + ...
                 (1 - params.IDSQ_alpha) * (curM - lastM);
             
             if params.logging
-                disp(['node ' num2str(j) ' senQ ' num2str(curF) ...
-                    ' main cost ' num2str(curM) ' Result ' num2str(curRes)]);
+                fprintf('node: %d senQ: %f main cost: %f res: %f\n', ...
+                    j, curF, curM, curRes);
             end
             
             % compare and update
