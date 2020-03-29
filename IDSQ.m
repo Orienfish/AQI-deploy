@@ -10,12 +10,12 @@ function [Xa, commMST] = IDSQ(Xv, cov_vd, Tv, params)
 %   params.K: the fitted RBF kernel function
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
-%   params.alpha: the weight factor in IDSQ
+%   params.IDSQ_alpha: the weight factor in IDSQ
+%   params.logging: logging flag   
 %
 % Return:
 %   Xa: a list of solution locations to place sensors
 %   commMST: the generated communication graph
-addpath('./libs/');
 addpath('./mlibs/');
 addpath('./lldistkm/');
 n_V = size(Xv, 1); % number of reference locations Xv
@@ -26,7 +26,7 @@ lastM = 0.0; % maintenance cost in last round of greedy selection
 commMST = NaN(n_V + 1); % init a matrix for connection graph
                         % first n entries are for Xv, the last one is for 
                         % the sink c. A single-direction MST.
-logging = false;
+predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 
 % get the valid indexes directly connected to the sink
 for p = 1:length(valid_idx)
@@ -35,19 +35,22 @@ for p = 1:length(valid_idx)
     if d1km < params.R
         valid_idx(p) = 1; % add the sensor to valid list
         commMST(n_V+1, p) = d1km; % update comm. graph
+        predMST(p) = n_V+1; % update the predecessor to sink
     end
 end
 
 % start the greedy selection of best m_A sensors
 for i = 1:params.m_A
     % print all valid indexes in this round
-    fprintf('valid indexes in round %d:\n', i);
-    for q = 1:length(valid_idx)
-        if valid_idx(q) == 1
-            fprintf('%d ', q);
+    if params.logging
+        fprintf('valid indexes in round %d:\n', i);
+        for q = 1:length(valid_idx)
+            if valid_idx(q) == 1
+                fprintf('%d ', q);
+            end
         end
+        fprintf('\n');
     end
-    fprintf('\n');
     
     maxF = -Inf; % sensing quality of max result during searching
     maxM = -Inf; % maintenance cost of max result during searching
@@ -67,15 +70,20 @@ for i = 1:params.m_A
             cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
             
             % pass only the MST of selected sensors
-            MST_idx = logical(vertcat(Xa_idx, [1]));
-            commMST_cur = commMST(MST_idx, MST_idx);
+            %MST_idx = logical(vertcat(Xa_idx, [1]));
+            %commMST_cur = commMST(MST_idx, MST_idx);
             % combine all together
-            curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, params.K);
-            fprintf('sensing quality with node %d is %f\n', j, curF);
-            curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur, logging);
-            fprintf('maintenance cost with node %d is %f\n', j, curM);
-            curRes = params.alpha * (curF - lastF) + ...
-                (1 - params.alpha) * (curM - lastM);
+            curF = sense_quality(X_remain, cov_remain, Xa_cur, ...
+                cov_Xa_cur, params.K);
+            curM = maintain_cost(Xa_cur, Ta_cur, commMST, ...
+                predMST, false);
+            curRes = params.IDSQ_alpha * (curF - lastF) + ...
+                (1 - params.IDSQ_alpha) * (curM - lastM);
+            
+            if params.logging
+                disp(['node ' num2str(j) ' senQ ' num2str(curF) ...
+                    ' main cost ' num2str(curM) ' Result ' num2str(curRes)]);
+            end
             
             % compare and update
             if curRes > maxRes && curM < params.Cm
@@ -95,8 +103,10 @@ for i = 1:params.m_A
         Xa_idx(maxRes_idx) = 1; % add the sensors to the list
         lastF = maxF;
         lastM = maxM;
+        if params.logging
         fprintf('The selection in round %d is %d: [%f %f]\n', ...
             i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
+        end
         
         % update the valid indexes
         for k = 1:length(valid_idx)
@@ -109,6 +119,7 @@ for i = 1:params.m_A
             if d1km < params.R
                 valid_idx(k) = 1; % add the sensor to valid list
                 commMST(maxRes_idx, k) = d1km; % update comm. graph
+                predMST(k) = maxRes_idx; % update the predecessor
             end
         end
     else

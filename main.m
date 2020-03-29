@@ -40,16 +40,16 @@ D_lon = vertcat(dataT.lon(:));
 D = horzcat(D_lat, D_lon);
 
 % get the region range, set grid unit and obtain V
-latUpper = max(D_lat);
-latLower = min(D_lat);
-lonUpper = max(D_lon);
-lonLower = min(D_lon);
+bound.latUpper = max(D_lat);
+bound.latLower = min(D_lat);
+bound.lonUpper = max(D_lon);
+bound.lonLower = min(D_lon);
 gridUnit = 0.05; % adjustable
-c = [(latUpper + latLower) / 2, (lonUpper + lonLower) / 2]; % sink position
-n_latV = floor((latUpper - latLower) / gridUnit);
-n_lonV = floor((lonUpper - lonLower) / gridUnit);
-V_lat = linspace(latLower, latUpper, n_latV);
-V_lon = linspace(lonLower, lonUpper, n_lonV);
+c = [(bound.latUpper + bound.latLower) / 2, (bound.lonUpper + bound.lonLower) / 2]; % sink position
+n_latV = floor((bound.latUpper - bound.latLower) / gridUnit);
+n_lonV = floor((bound.lonUpper - bound.lonLower) / gridUnit);
+V_lat = linspace(bound.latLower, bound.latUpper, n_latV);
+V_lon = linspace(bound.lonLower, bound.lonUpper, n_lonV);
 
 % fill the grid locations into V
 n_V = n_latV * n_lonV; % total number of locations in V
@@ -126,8 +126,8 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 
 % Generate a random A
 %A = zeros(m_A, 2);
-%pd_lat = makedist('Uniform', 'lower', latLower, 'upper', latUpper);
-%pd_lon = makedist('Uniform', 'lower', lonLower, 'upper', lonUpper);
+%pd_lat = makedist('Uniform', 'lower', bound.latLower, 'upper', bound.latUpper);
+%pd_lon = makedist('Uniform', 'lower', bound.lonLower, 'upper', bound.lonUpper);
 %for i = 1:m_A
 %    A(i, :) = [random(pd_lat) random(pd_lon)];
 %end
@@ -156,9 +156,20 @@ params.Cm = Cm;
 params.K = K_pm2_5;
 params.c = c;
 params.R = R;
-params.alpha = 0.6;
+params.IDSQ_alpha = 0.6;
+params.logging = true;
 [A, commMST] = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
 plot_solution(A, commMST, c);
+
+%% call PSO
+% problem definition
+nVar = m_A;             % number of unknown decision variables
+VarSize = [nVar 2];     % matrix size of decision variables
+
+% parameters of PSO
+maxIter = 100;          % maximum number of iterations
+nPop = 50;              % populaton size
+
 
 %% plot functions
 function bubbleplot(lat, lon, title)
