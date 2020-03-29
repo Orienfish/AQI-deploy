@@ -1,6 +1,7 @@
 %% main.m
-close all;
+clc;
 clear;
+close all;
 warning('off','all')
 addpath('./libs/');
 addpath('./mlibs/');
@@ -20,7 +21,7 @@ interval = 60 * 10;                % 10 mins = 600 secs
 R = 10;                            % communication range of sensors in km
 
 %% pre-process
-fprintf('start pre-processing...\n');
+disp('start pre-processing...\n');
 % get the mean, var and count of each type of data
 f_list = dir('./data/*Primary*.csv'); % use all primary data
 dataT_sav = './data/dataT.csv';
@@ -58,7 +59,7 @@ for i = 1:n_latV
         V((i - 1) * n_lonV + j, :) = [V_lat(i) V_lon(j)];
     end
 end
-fprintf('Generate V with size %d x %d \n', n_latV, n_lonV);
+disp(['Generate V with size ' num2str(n_latV) ' x ' num2str(n_lonV)]);
 bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
@@ -95,7 +96,7 @@ figure();
 h = heatmap(cov_mat_temp);
 
 %% fit the RBF kernel for certain data types
-fprintf('Fitting the RBF kernel...\n');
+disp('Fitting the RBF kernel...\n');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 

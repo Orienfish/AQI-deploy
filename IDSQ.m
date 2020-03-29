@@ -26,6 +26,7 @@ lastM = 0.0; % maintenance cost in last round of greedy selection
 commMST = NaN(n_V + 1); % init a matrix for connection graph
                         % first n entries are for Xv, the last one is for 
                         % the sink c. A single-direction MST.
+logging = false;
 
 % get the valid indexes directly connected to the sink
 for p = 1:length(valid_idx)
@@ -77,7 +78,7 @@ for i = 1:m_A
             curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
             fprintf('sensing quality with node %d is %f\n', j, curF);
             curM = maintain_cost(Xa_cur, Ta_cur, commMST_cur);
-            fprintf('maintenance cost with node %d is %f\n', j, curM);
+            fprintf('maintenance cost with node %d is %f\n', j, curM, logging);
             curRes = alpha * (curF - lastF) + (1 - alpha) * (curM - lastM);
             
             % compare and update
