@@ -62,6 +62,7 @@ end
 % calculate the sensing quality of all sensors
 F = sense_quality(Qparams.Xv, Qparams.cov_vd, Qparams.Xa, Qparams.cov_ad, ...
     params.K);
+F = real(F); % take the real part
 
 % calculate the maintenance cost of connected sensors
 M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...

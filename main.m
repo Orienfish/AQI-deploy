@@ -169,11 +169,17 @@ VarSize = [nVar 2];     % matrix size of decision variables
 
 % parameters of PSO
 maxIter = 100;          % maximum number of iterations
-nPop = 50;              % populaton size
-w = 1;                  % inertia coefficient
-wdamp = 0.99;           % damping ratio of inertia coefficient
-c1 = 2;                 % personal acceleration coefficient
-c2 = 2;                 % social acceleration coefficient
+nPop = 10;               % populaton size
+chi = 0.729;            % constriction factor
+w = chi;                  % inertia coefficient
+wdamp = 1;           % damping ratio of inertia coefficient
+c1 = 2 * chi;                 % personal acceleration coefficient
+c2 = 2 * chi;                 % social acceleration coefficient
+
+MaxVelocity = 0.2 * [(bound.latUpper - bound.latLower), ...
+    (bound.lonUpper - bound.lonLower)];
+MinVelocity = - MaxVelocity;
+
 % parameters of the cost function
 params.weights = [10 5 0.2];
 params.penalty = 100;
@@ -195,8 +201,8 @@ particle = repmat(empty_particle, nPop, 1);
 
 % initialize global best
 GlobalBest.Cost = inf;
-GlobalBest.senQuality = inf;
-GlobalBest.mainCost = inf;
+% Note: no need to init Position, senQuality, mainCost
+% they will be init in the initialization process
 
 % initialize population members
 for i=1:nPop
@@ -245,12 +251,38 @@ BestCosts = zeros(maxIter, 1);
 for it = 1:maxIter
     for i = 1:nPop
         % update velocity
+        %term1 = c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position);
+        %term2 = c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
+        %particle(i).Velocity = particle(i).Velocity + term1 + term2;
         particle(i).Velocity = particle(i).Velocity ...
             + c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position) ...
             + c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
+        %fprintf('particle %d\n', i);
+        %disp('term1');
+        %disp(term1);
+        %disp('term2');
+        %disp(term2);
+        %disp('velocity');
+        %disp(particle(i).Velocity);
+        
+        % apply velocity limits
+        particle(i).Velocity = max(particle(i).Velocity, MinVelocity);
+        particle(i).Velocity = min(particle(i).Velocity, MaxVelocity);
+        %disp('velocity after limits');
+        %disp(particle(i).Velocity);
         
         % update position
-        particle(i).position = particle(i).Position + particle(i).Velocity;
+        particle(i).Position = particle(i).Position + particle(i).Velocity;
+        
+        % apply lower and upper bound limits
+        particle(i).Position(:, 1) = ...
+            max(particle(i).Position(:, 1), bound.latLower);
+        particle(i).Position(:, 1) = ...
+            min(particle(i).Position(:, 1), bound.latUpper);
+        particle(i).Position(:, 2) = ...
+            max(particle(i).Position(:, 2), bound.lonLower);
+        particle(i).Position(:, 2) = ...
+            min(particle(i).Position(:, 2), bound.lonUpper);
         
         % cost evaluation
         [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
@@ -269,16 +301,21 @@ for it = 1:maxIter
         particle(i).Cost = res.cost;
         particle(i).senQuality = res.F;
         particle(i).mainCost = res.M;
+        %fprintf('particle %d\n', i);
+        %fprintf('Cost: %f senQ: %f mainCost: %f\n', particle(i).Cost, ...
+        %    particle(i).senQuality, particle(i).mainCost);
         
         % update personal best
         if particle(i).Cost < particle(i).Best.Cost
-            particle(i).Best.Position = paticle(i).Position;
+            fprintf('update personal best\n');
+            particle(i).Best.Position = particle(i).Position;
             particle(i).Best.Cost = particle(i).Cost;
             particle(i).Best.senQuality = particle(i).senQuality;
             particle(i).Best.mainCost = particle(i).mainCost;
             
             % update the global best
             if particle(i).Best.Cost < GlobalBest.Cost
+                fprintf('update global best\n');
                 GlobalBest = particle(i).Best;
             end
         end
@@ -290,7 +327,6 @@ for it = 1:maxIter
     % display iteration information
     fprintf('Iteration %d: Best Cost: %f senQ: %f mainCost: %f\n', ...
         it, GlobalBest.Cost, GlobalBest.senQuality, GlobalBest.mainCost);
-    disp([])
     
     % damping inertia coefficient
     w = w * wdamp;
@@ -300,7 +336,22 @@ figure;
 plot(BestCosts, 'LineWidth', 2);
 xlabel('Iteration');
 ylabel('Best Cost');
-% plot_solution(A, predMST, c);
+
+% evaluation the GlobalBest and plot
+[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+    GlobalBest.Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+    GlobalBest.Position, D, mean_temp, cov_mat_temp, K_temp);
+temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+        
+% Qparams.Xv = V;                 % use the same value as init
+% Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
+Qparams.Xa = GlobalBest.Position;
+Qparams.Ta = fah2cel(temp_mean_ad);
+Qparams.cov_ad = pm2_5_cov_ad;
+[res, commMST, predMST] = costFunction(Qparams, params);
+
+plot_solution(GlobalBest.Position, predMST, c);
 
 
 %% plot functions
