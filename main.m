@@ -157,9 +157,9 @@ params.K = K_pm2_5;
 params.c = c;
 params.R = R;
 params.IDSQ_alpha = 0.6;
-params.logging = true;
-resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
-plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+params.logging = false;
+%resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
+%plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
 
 %% call PSO
 fprintf('Calling PSO...\n');
@@ -170,27 +170,137 @@ VarSize = [nVar 2];     % matrix size of decision variables
 % parameters of PSO
 maxIter = 100;          % maximum number of iterations
 nPop = 50;              % populaton size
-
-A = zeros(m_A, 2);
-pd_lat = makedist('Uniform', 'lower', bound.latLower, 'upper', bound.latUpper);
-pd_lon = makedist('Uniform', 'lower', bound.lonLower, 'upper', bound.lonUpper);
-for i = 1:m_A
-    A(i, :) = [random(pd_lat) random(pd_lon)];
-end
-[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD(A, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-[temp_mean_ad, temp_cov_ad] = gp_predict_knownD(A, D, mean_temp, cov_mat_temp, K_temp);
-temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-bubbleplot_wsize(A(:, 1), A(:, 2), pm2_5_mean_ad, diag(pm2_5_cov_ad), 'A given D');
-% setting parameters
-Qparams.Xv = V;
-Qparams.cov_vd = pm2_5_cov_vd;
-Qparams.Xa = A;
-Qparams.Ta = fah2cel(temp_mean_ad);
-Qparams.cov_ad = pm2_5_cov_ad;
-params.weights = [0.5 0.3 0.2];
+w = 1;                  % inertia coefficient
+wdamp = 0.99;           % damping ratio of inertia coefficient
+c1 = 2;                 % personal acceleration coefficient
+c2 = 2;                 % social acceleration coefficient
+% parameters of the cost function
+params.weights = [10 1 0.2];
 params.penalty = 100;
-[cost, commMST, predMST] = costFunction(Qparams, params);
-plot_solution(A, predMST, c);
+
+% initialization
+% the particle template
+empty_particle.Position = [];
+empty_particle.Velocity = [];
+empty_particle.Cost = [];
+empty_particle.senQuality = [];
+empty_particle.mainCost = [];
+empty_particle.Best.Position = []; % personal best
+empty_particle.Best.Cost = [];     % personal best
+empty_particle.Best.senQuality = [];
+empty_particle.Best.mainCost = [];
+
+% create population array
+particle = repmat(empty_particle, nPop, 1);
+
+% initialize global best
+GlobalBest.Cost = inf;
+GlobalBest.senQuality = inf;
+GlobalBest.mainCost = inf;
+
+% initialize population members
+for i=1:nPop
+    % generate random solution
+    particle(i).Position(:, 1) = unifrnd(bound.latLower, bound.latUpper, nVar, 1);
+    particle(i).Position(:, 2) = unifrnd(bound.lonLower, bound.lonUpper, nVar, 1);
+    
+    % initialize velocity
+    particle(i).Velocity = zeros(VarSize);
+    
+    % cost evaluation
+    [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+        particle(i).Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+        particle(i).Position, D, mean_temp, cov_mat_temp, K_temp);
+    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+    
+    % setting Quality parameters
+    Qparams.Xv = V;
+    Qparams.cov_vd = pm2_5_cov_vd;
+    Qparams.Xa = particle(i).Position;
+    Qparams.Ta = fah2cel(temp_mean_ad);
+    Qparams.cov_ad = pm2_5_cov_ad;
+    [res, commMST, predMST] = costFunction(Qparams, params);
+    
+    particle(i).Cost = res.cost;
+    particle(i).senQuality = res.F;
+    particle(i).mainCost = res.M;
+    
+    % update the personal best
+    particle(i).Best.Position = particle(i).Position;
+    particle(i).Best.Cost = particle(i).Cost;
+    particle(i).Best.senQuality = particle(i).senQuality;
+    particle(i).Best.mainCost = particle(i).mainCost;
+    
+    % update the global best
+    if particle(i).Best.Cost < GlobalBest.Cost
+        GlobalBest = particle(i).Best;
+    end
+end
+
+% array to hold best cost value on each iteration
+BestCosts = zeros(maxIter, 1);
+
+% main loop of PSO
+for it = 1:maxIter
+    for i = 1:nPop
+        % update velocity
+        particle(i).Velocity = particle(i).Velocity ...
+            + c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position) ...
+            + c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
+        
+        % update position
+        particle(i).position = particle(i).Position + particle(i).Velocity;
+        
+        % cost evaluation
+        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+            particle(i).Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+            particle(i).Position, D, mean_temp, cov_mat_temp, K_temp);
+        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+        
+        % Qparams.Xv = V;                 % use the same value as init
+        % Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
+        Qparams.Xa = particle(i).Position;
+        Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.cov_ad = pm2_5_cov_ad;
+        [cost, commMST, predMST] = costFunction(Qparams, params);
+
+        particle(i).Cost = cost;
+        particle(i).senQuality = res.F;
+        particle(i).mainCost = res.M;
+        
+        % update personal best
+        if particle(i).Cost < particle(i).Best.Cost
+            particle(i).Best.Position = paticle(i).Position;
+            particle(i).Best.Cost = particle(i).Cost;
+            particle(i).Best.senQuality = particle(i).senQuality;
+            particle(i).Best.mainCost = particle(i).mainCost;
+            
+            % update the global best
+            if particle(i).Best.Cost < GlobalBest.Cost
+                GlobalBest = particle(i).Best;
+            end
+        end
+    end
+    
+    % store the best cost value
+    BestCosts(it) = GlobalBest.Cost;
+    
+    % display iteration information
+    fprintf('Iteration %d: Best Cost: %f senQ: %f mainCost: %f\n', ...
+        it, GlobalBest.Cost, GlobalBest.senQuality, GlobalBest.mainCost);
+    disp([])
+    
+    % damping inertia coefficient
+    w = w * wdamp;
+end
+
+figure;
+plot(BestCosts, 'LineWidth', 2);
+xlabel('Iteration');
+ylabel('Best Cost');
+% plot_solution(A, predMST, c);
 
 
 %% plot functions

@@ -1,4 +1,4 @@
-function [cost, G, pred] = costFunction(Qparams, params)
+function [res, G, pred] = costFunction(Qparams, params)
 %% Cost function to minimize in PSO.
 %
 % Args:
@@ -17,7 +17,9 @@ function [cost, G, pred] = costFunction(Qparams, params)
 %   params.logging: logging flag
 %
 % Return:
-%   cost: the cost of the current deployment A
+%   res.cost: the cost of the current deployment A
+%   res.F: sensing quality of the solution
+%   res.M: maintenance cost of the solution
 %   G: the feasible connection graph of the current deployment A
 %   pred: the predecessor in MST of A
 addpath('./mlibs/');
@@ -69,11 +71,14 @@ M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...
 P = params.penalty * (sum(~connected));
 
 % final cost
-cost = params.weights(1) * (-F) + params.weights(2) * M + ...
-    params.weights(3) * P;
+cost = params.weights(1) * (-F) + params.weights(2) * max(M - params.Cm, 0) ... 
+    + params.weights(3) * P;
 if params.logging
     fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M, P);
     fprintf('total cost: %f\n', cost);
 end
+res.cost = cost;
+res.F = F;
+res.M = M;
 end
 
