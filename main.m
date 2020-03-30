@@ -21,7 +21,7 @@ interval = 60 * 10;                % 10 mins = 600 secs
 R = 10;                            % communication range of sensors in km
 
 %% pre-process
-disp('start pre-processing...');
+fprintf('start pre-processing...\n');
 % get the mean, var and count of each type of data
 f_list = dir('./data/*Primary*.csv'); % use all primary data
 dataT_sav = './data/dataT.csv';
@@ -59,8 +59,8 @@ for i = 1:n_latV
         V((i - 1) * n_lonV + j, :) = [V_lat(i) V_lon(j)];
     end
 end
-disp(['Generate V with size ' num2str(n_latV) ' x ' num2str(n_lonV)]);
-bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
+fprintf('Generate V with size %d x %d\n', num2str(n_latV), num2str(n_lonV));
+%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
 % pm2_5
@@ -92,18 +92,18 @@ else
     sdate, edate, interval, cov_mat_temp_sav, corr_mat_temp_sav, thres);
 end
 toc
-figure();
-h = heatmap(cov_mat_temp);
+%figure();
+%h = heatmap(cov_mat_temp);
 
 %% fit the RBF kernel for certain data types
-disp('Fitting the RBF kernel...');
+fprintf('Fitting the RBF kernel...\n');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% Get the estimated mean and cov at V
 [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
-bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
 %Xv = V;
@@ -121,8 +121,8 @@ bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V g
 %temp_mean_vd = Sigma_VD * cov_d_inv * mean_d;
 %temp_cov_vd = Sigma_VV - Sigma_VD * cov_d_inv * Sigma_DV;
 temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
-bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
 
 % Generate a random A
 %A = zeros(m_A, 2);
@@ -149,7 +149,7 @@ bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V give
 %fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
 
 %% Call the greedy heuristic IDSQ
-fprintf('Calling IDSQ...');
+fprintf('Calling IDSQ...\n');
 Tv_cel = fah2cel(temp_mean_vd);
 params.m_A = m_A;
 params.Cm = Cm;
@@ -158,10 +158,11 @@ params.c = c;
 params.R = R;
 params.IDSQ_alpha = 0.6;
 params.logging = true;
-[A, commMST] = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
-plot_solution(A, commMST, c);
+resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
+plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
 
 %% call PSO
+fprintf('Calling PSO...\n');
 % problem definition
 nVar = m_A;             % number of unknown decision variables
 VarSize = [nVar 2];     % matrix size of decision variables
@@ -169,6 +170,27 @@ VarSize = [nVar 2];     % matrix size of decision variables
 % parameters of PSO
 maxIter = 100;          % maximum number of iterations
 nPop = 50;              % populaton size
+
+A = zeros(m_A, 2);
+pd_lat = makedist('Uniform', 'lower', bound.latLower, 'upper', bound.latUpper);
+pd_lon = makedist('Uniform', 'lower', bound.lonLower, 'upper', bound.lonUpper);
+for i = 1:m_A
+    A(i, :) = [random(pd_lat) random(pd_lon)];
+end
+[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD(A, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+[temp_mean_ad, temp_cov_ad] = gp_predict_knownD(A, D, mean_temp, cov_mat_temp, K_temp);
+temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+bubbleplot_wsize(A(:, 1), A(:, 2), pm2_5_mean_ad, diag(pm2_5_cov_ad), 'A given D');
+% setting parameters
+Qparams.Xv = V;
+Qparams.cov_vd = pm2_5_cov_vd;
+Qparams.Xa = A;
+Qparams.Ta = fah2cel(temp_mean_ad);
+Qparams.cov_ad = pm2_5_cov_ad;
+params.weights = [0.5 0.3 0.2];
+params.penalty = 100;
+[cost, commMST, predMST] = costFunction(Qparams, params);
+plot_solution(A, predMST, c);
 
 
 %% plot functions
@@ -196,7 +218,7 @@ function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
     %geobasemap streets-light; % set base map style
 end
 
-function plot_solution(A, commMST, c)
+function plot_IDSQ(A, commMST, c)
     figure();
     geoaxes('NextPlot','add');
     % generate list of nodes including the sink
@@ -208,6 +230,20 @@ function plot_solution(A, commMST, c)
                 geoplot([nodes(i, 1) nodes(j, 1)], ...
                     [nodes(i, 2) nodes(j, 2)], 'b-*', 'LineWidth', 2);
             end
+        end
+    end   
+end
+
+function plot_solution(A, predMST, c)
+    figure();
+    geoaxes('NextPlot','add');
+    % generate list of nodes including the sink
+    nodes = vertcat(A, c);
+    % plot connections from commMST
+    for i = 1:length(predMST)
+        if ~isnan(predMST(i)) && predMST(i) > 0
+            geoplot([nodes(i, 1) nodes(predMST(i), 1)], ...
+                [nodes(i, 2) nodes(predMST(i), 2)], 'b-*', 'LineWidth', 2);
         end
     end   
 end

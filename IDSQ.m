@@ -1,4 +1,4 @@
-function [Xa, commMST] = IDSQ(Xv, cov_vd, Tv, params)
+function [res] = IDSQ(Xv, cov_vd, Tv, params)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
@@ -14,8 +14,10 @@ function [Xa, commMST] = IDSQ(Xv, cov_vd, Tv, params)
 %   params.logging: logging flag   
 %
 % Return:
-%   Xa: a list of solution locations to place sensors
-%   commMST: the generated communication graph
+%   res.Xa: a list of solution locations to place sensors
+%   res.commMST: the generated communication graph
+%   res.F: sensing quality of the solution
+%   res.M: maintenance cost of the solution
 addpath('./mlibs/');
 addpath('./lldistkm/');
 n_V = size(Xv, 1); % number of reference locations Xv
@@ -100,8 +102,8 @@ for i = 1:params.m_A
         lastF = maxF;
         lastM = maxM;
         if params.logging
-        fprintf('The selection in round %d is %d: [%f %f]\n', ...
-            i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
+            fprintf('The selection in round %d is %d: [%f %f]\n', ...
+                i, maxRes_idx, Xv(maxRes_idx, 1), Xv(maxRes_idx, 2));
         end
         
         % update the valid indexes
@@ -123,9 +125,12 @@ for i = 1:params.m_A
     end
 end
 % return the final selection solution
-Xa = Xv(logical(Xa_idx), :);
+res.Xa = Xv(logical(Xa_idx), :);
 % pass only the MST of selected sensors
 MST_idx = logical(vertcat(Xa_idx, [1]));
-commMST = commMST(MST_idx, MST_idx);
+res.commMST = commMST(MST_idx, MST_idx);
+% pass the final results
+res.F = lastF;
+res.M = lastM;
 end
 
