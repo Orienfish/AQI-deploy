@@ -175,7 +175,7 @@ wdamp = 0.99;           % damping ratio of inertia coefficient
 c1 = 2;                 % personal acceleration coefficient
 c2 = 2;                 % social acceleration coefficient
 % parameters of the cost function
-params.weights = [10 1 0.2];
+params.weights = [10 5 0.2];
 params.penalty = 100;
 
 % initialization
@@ -264,9 +264,9 @@ for it = 1:maxIter
         Qparams.Xa = particle(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
-        [cost, commMST, predMST] = costFunction(Qparams, params);
+        [res, commMST, predMST] = costFunction(Qparams, params);
 
-        particle(i).Cost = cost;
+        particle(i).Cost = res.cost;
         particle(i).senQuality = res.F;
         particle(i).mainCost = res.M;
         
