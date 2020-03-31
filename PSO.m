@@ -7,7 +7,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   Qparams.Xd: list of predeployment locations
 %   Qparams.mean_d: mean value at D
 %   Qparams.cov_d: cov matrix at D
-%   Qparams.Xa: list of locations PSOparams.we are supposed to observe, [lat lon]
+%   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %   Qparams.mean_temp_d: mean temperature at D
@@ -35,7 +35,11 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   PSOparams.bound: PSOparams.bound for the area
 %
 % Return:
-%
+%   out.Position: the global best locations
+%   out.Cost: the global best cost
+%   out.senQuality: the global best sensing quality
+%   out.mainCost: the global best maintenance cost
+%   out.BestCosts: the global best cost iteration curve
 addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
