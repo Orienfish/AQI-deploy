@@ -82,6 +82,7 @@ for i=1:PSOparams.nPop
     particle(i).Velocity = zeros(PSOparams.VarSize);
     
     % cost evaluation
+    % estimate the mean at given position
     [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
         particle(i).Position, Qparams.Xd, Qparams.mean_d, ...
         Qparams.cov_d, params.K);

@@ -106,48 +106,9 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
-%Xv = V;
-%Xd = D;
-%K = K_temp;
-%mean_d = mean_temp;
-%cov_d = cov_mat_temp;
-%cov_d_inv = inv(cov_d);
-% calculate Sigma_VD, Sigma_DV and Sigma_VV
-%Sigma_VD = gen_Sigma(Xv, Xd, K);
-%Sigma_DV = Sigma_VD';
-%Sigma_VV = gen_Sigma(Xv, Xv, K);
-
-% calculate mean vector and covariance matrix
-%temp_mean_vd = Sigma_VD * cov_d_inv * mean_d;
-%temp_cov_vd = Sigma_VV - Sigma_VD * cov_d_inv * Sigma_DV;
-temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
+%temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
-
-% Generate a random A
-%A = zeros(m_A, 2);
-%pd_lat = makedist('Uniform', 'lower', bound.latLower, 'upper', bound.latUpper);
-%pd_lon = makedist('Uniform', 'lower', bound.lonLower, 'upper', bound.lonUpper);
-%for i = 1:m_A
-%    A(i, :) = [random(pd_lat) random(pd_lon)];
-%end
-% plot V and A on one map
-%sizedata = ones(m_A + n_V, 1); % uniform size
-%colordata = categorical(vertcat(zeros(m_A, 1), ones(n_V, 1))); % two categories
-%bubbleplot_wcolor(vertcat(A(:, 1), V(:, 1)), vertcat(A(:, 2), V(:, 2)), ...
-%    sizedata, colordata, 'V and A');
-% get the estimated mean and cov at A
-%[mean_ad, cov_ad] = gp_predict_knownA(A, D, mean_pm2_5, cov_mat_pm2_5, K);
-%bubbleplot_wsize(A(:, 1), A(:, 2), mean_ad, diag(cov_ad), 'A given D');
-
-% Evaluate uncertainty or conditional entropy
-%condEntropy = cond_entropy(V, A, K);
-%condEntropy_d = cond_entropy_d(V, cov_vd, A, cov_ad, K);
-%fprintf('conditional entropy w/o predeployment: %f\n', condEntropy);
-%fprintf('conditional entropy w/ predeployment: %f\n', condEntropy_d);
-%senseQuality = sense_quality(V, cov_vd, A, cov_ad, K);
-%fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
 
 %% setting parameters for algorithms
 % setting Quality parameters
@@ -174,14 +135,14 @@ params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
                                         % maintenance cost and penalty
 params.penalty = 100;                   % penalty for non-connected nodes
 
-% call the greedy heuristic IDSQ
+%% call the greedy heuristic IDSQ
 fprintf('Calling IDSQ...\n');
-Tv_cel = fah2cel(temp_mean_vd);
 IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
-%resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params, IDSQparams);
-%plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+resIDSQ = IDSQ(Qparams, params, IDSQparams);
+plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
 
-% call PSO
+%% call PSO
 fprintf('Calling PSO...\n');
 % problem definition
 PSOparams.nVar = m_A;                   % number of unknown decision variables
@@ -198,18 +159,18 @@ PSOparams.bound = bound;                % bound for the area
 
 params.Cm = params.Cm - 0.5;            % need some margin
 
-res = PSO(Qparams, params, PSOparams);
+resPSO = PSO(Qparams, params, PSOparams);
 
 % plot the BestCosts curve
 figure();
-plot(res.BestCosts, 'LineWidth', 2);
+plot(resPSO.BestCosts, 'LineWidth', 2);
 xlabel('Iteration');
 ylabel('Best Cost');
 
 % plot the solution
-nodes = vertcat(res.Position, c);
-[PSOTree, PSOpred] = MST(res.Position, c, R);
-plot_solution(nodes, PSOpred);
+[PSOTree, PSOpred] = MST(resPSO.Position, c, R);
+nodesPSO = vertcat(resPSO.Position, c);
+plot_solution(nodesPSO, PSOpred);
 
 
 %% plot functions
