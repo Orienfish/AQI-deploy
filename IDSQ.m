@@ -1,4 +1,4 @@
-function [res] = IDSQ(Xv, cov_vd, Tv, params)
+function [res] = IDSQ(Xv, cov_vd, Tv, params, IDSQparams)
 %% Greedy heuristic IDSQ to place sensors on a subset of locations.
 %
 % Args:
@@ -10,8 +10,8 @@ function [res] = IDSQ(Xv, cov_vd, Tv, params)
 %   params.K: the fitted RBF kernel function
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
-%   params.IDSQ_alpha: the weight factor in IDSQ
-%   params.logging: logging flag   
+%   params.logging: logging flag
+%   IDSQparams.alpha: the weight factor in IDSQ
 %
 % Return:
 %   res.Xa: a list of solution locations to place sensors
@@ -20,14 +20,17 @@ function [res] = IDSQ(Xv, cov_vd, Tv, params)
 %   res.M: maintenance cost of the solution
 addpath('./mlibs/');
 addpath('./lldistkm/');
-n_V = size(Xv, 1); % number of reference locations Xv
-valid_idx = zeros(n_V, 1); % a list of valid indexes in comm. range
-Xa_idx = zeros(n_V, 1); % init idx list for Xa to all zero
-lastF = 0.0; % sensing quality in last round of greedy selection
-lastM = 0.0; % maintenance cost in last round of greedy selection
-commMST = NaN(n_V + 1); % init a matrix for connection graph
-                        % first n entries are for Xv, the last one is for 
-                        % the sink c. A single-direction MST.
+addpath('./gp/');
+
+% local variables
+n_V = size(Xv, 1);          % number of reference locations Xv
+valid_idx = zeros(n_V, 1);  % a list of valid indexes in comm. range
+Xa_idx = zeros(n_V, 1);     % init idx list for Xa to all zero
+lastF = 0.0;                % sensing quality in last round of greedy selection
+lastM = 0.0;                % maintenance cost in last round of greedy selection
+commMST = NaN(n_V + 1);     % init a matrix for connection graph
+                            % first n entries are for Xv, the last one is  
+                            % for the sink c. A single-direction MST.
 predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 
 % get the valid indexes directly connected to the sink
@@ -54,10 +57,10 @@ for i = 1:params.m_A
         fprintf('\n');
     end
     
-    maxF = -Inf; % sensing quality of max result during searching
-    maxM = -Inf; % maintenance cost of max result during searching
-    maxRes = -Inf; % max result during searching
-    maxRes_idx = -1; % the index of the best selection
+    maxF = -Inf;        % sensing quality of max result during searching
+    maxM = -Inf;        % maintenance cost of max result during searching
+    maxRes = -Inf;      % max result during searching
+    maxRes_idx = -1;    % the index of the best selection
     
     for j = 1:length(valid_idx)
         if valid_idx(j) == 1 && Xa_idx(j) == 0 % not select before
@@ -76,8 +79,8 @@ for i = 1:params.m_A
             curF = real(curF); % take the real part
             curM = maintain_cost(Xv, Tv, Xa_idx, commMST, predMST, ...
                 params.logging);
-            curRes = params.IDSQ_alpha * (curF - lastF) + ...
-                (1 - params.IDSQ_alpha) * (curM - lastM);
+            curRes = IDSQparams.alpha * (curF - lastF) + ...
+                (1 - IDSQparams.alpha) * (curM - lastM);
             
             if params.logging
                 fprintf('node: %d senQ: %f main cost: %f res: %f\n', ...

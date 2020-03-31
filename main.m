@@ -6,6 +6,7 @@ warning('off','all')
 addpath('./libs/');
 addpath('./mlibs/');
 addpath('./lldistkm/');
+addpath('./gp/');
 diary 'log.txt';
 
 %% settings
@@ -100,7 +101,7 @@ fprintf('Fitting the RBF kernel...\n');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
-%% Get the estimated mean and cov at V
+%% get the estimated mean and cov at V
 [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
@@ -148,210 +149,78 @@ temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 %senseQuality = sense_quality(V, cov_vd, A, cov_ad, K);
 %fprintf('sensing quality w/ predeployment: %f\n', senseQuality);
 
-%% Call the greedy heuristic IDSQ
+%% setting parameters for algorithms
+% setting Quality parameters
+Qparams.Xv = V;                         % list of reference locations to 
+                                        % predict, [lat lon]
+Qparams.cov_vd = pm2_5_cov_vd;          % cov matrix at Xv given pre-deployment D
+Qparams.Xd = D;                         % list of predeployment locations
+Qparams.mean_d = mean_pm2_5;            % mean value at D
+Qparams.cov_d = cov_mat_pm2_5;          % cov matrix at D
+Qparams.mean_temp_d = mean_temp;        % mean temperature at D
+Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
+
+% set parameters
+params.m_A = m_A;                       % number of sensors to deploy
+params.Cm = Cm;                         % maintenance cost budget
+params.K = K_pm2_5;                     % the fitted RBF kernel function
+params.K_temp = K_temp;                 % the fitted RBF kernel function 
+                                        % for temperature
+params.c = c;                           % position of the sink in [lat lon]
+params.R = R;                           % communication range of the sensors in km
+params.logging = false;                 % logging flag
+% parameters of the cost function
+params.weights = [0.5 0.4 0.1];            % weights for sensing quality,
+                                        % maintenance cost and penalty
+params.penalty = 100;                   % penalty for non-connected nodes
+
+% call the greedy heuristic IDSQ
 fprintf('Calling IDSQ...\n');
 Tv_cel = fah2cel(temp_mean_vd);
-params.m_A = m_A;
-params.Cm = Cm;
-params.K = K_pm2_5;
-params.c = c;
-params.R = R;
-params.IDSQ_alpha = 0.6;
-params.logging = false;
-%resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params);
+IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
+%resIDSQ = IDSQ(V, pm2_5_cov_vd, Tv_cel, params, IDSQparams);
 %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
 
-%% call PSO
+% call PSO
 fprintf('Calling PSO...\n');
 % problem definition
-nVar = m_A;             % number of unknown decision variables
-VarSize = [nVar 2];     % matrix size of decision variables
-
+PSOparams.nVar = m_A;                   % number of unknown decision variables
+PSOparams.VarSize = [PSOparams.nVar 2]; % matrix size of decision variables
 % parameters of PSO
-maxIter = 100;          % maximum number of iterations
-nPop = 10;               % populaton size
-chi = 0.729;            % constriction factor
-w = chi;                  % inertia coefficient
-wdamp = 1;           % damping ratio of inertia coefficient
-c1 = 2 * chi;                 % personal acceleration coefficient
-c2 = 2 * chi;                 % social acceleration coefficient
+PSOparams.maxIter = 100;                % maximum number of iterations
+PSOparams.nPop = 10;                    % populaton size
+PSOparams.chi = 0.729;                  % constriction factor
+PSOparams.w = PSOparams.chi;            % inertia coefficient
+PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
+PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
+PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
+PSOparams.bound = bound;                % bound for the area
 
-MaxVelocity = 0.2 * [(bound.latUpper - bound.latLower), ...
-    (bound.lonUpper - bound.lonLower)];
-MinVelocity = - MaxVelocity;
+params.Cm = params.Cm - 0.5;            % need some margin
 
-% parameters of the cost function
-params.weights = [10 5 0.2];
-params.penalty = 100;
+res = PSO(Qparams, params, PSOparams);
 
-% initialization
-% the particle template
-empty_particle.Position = [];
-empty_particle.Velocity = [];
-empty_particle.Cost = [];
-empty_particle.senQuality = [];
-empty_particle.mainCost = [];
-empty_particle.Best.Position = []; % personal best
-empty_particle.Best.Cost = [];     % personal best
-empty_particle.Best.senQuality = [];
-empty_particle.Best.mainCost = [];
-
-% create population array
-particle = repmat(empty_particle, nPop, 1);
-
-% initialize global best
-GlobalBest.Cost = inf;
-% Note: no need to init Position, senQuality, mainCost
-% they will be init in the initialization process
-
-% initialize population members
-for i=1:nPop
-    % generate random solution
-    particle(i).Position(:, 1) = unifrnd(bound.latLower, bound.latUpper, nVar, 1);
-    particle(i).Position(:, 2) = unifrnd(bound.lonLower, bound.lonUpper, nVar, 1);
-    
-    % initialize velocity
-    particle(i).Velocity = zeros(VarSize);
-    
-    % cost evaluation
-    [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-        particle(i).Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-        particle(i).Position, D, mean_temp, cov_mat_temp, K_temp);
-    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-    
-    % setting Quality parameters
-    Qparams.Xv = V;
-    Qparams.cov_vd = pm2_5_cov_vd;
-    Qparams.Xa = particle(i).Position;
-    Qparams.Ta = fah2cel(temp_mean_ad);
-    Qparams.cov_ad = pm2_5_cov_ad;
-    [res, commMST, predMST] = costFunction(Qparams, params);
-    
-    particle(i).Cost = res.cost;
-    particle(i).senQuality = res.F;
-    particle(i).mainCost = res.M;
-    
-    % update the personal best
-    particle(i).Best.Position = particle(i).Position;
-    particle(i).Best.Cost = particle(i).Cost;
-    particle(i).Best.senQuality = particle(i).senQuality;
-    particle(i).Best.mainCost = particle(i).mainCost;
-    
-    % update the global best
-    if particle(i).Best.Cost < GlobalBest.Cost
-        GlobalBest = particle(i).Best;
-    end
-end
-
-% array to hold best cost value on each iteration
-BestCosts = zeros(maxIter, 1);
-
-% main loop of PSO
-for it = 1:maxIter
-    for i = 1:nPop
-        % update velocity
-        %term1 = c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position);
-        %term2 = c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
-        %particle(i).Velocity = particle(i).Velocity + term1 + term2;
-        particle(i).Velocity = particle(i).Velocity ...
-            + c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position) ...
-            + c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
-        %fprintf('particle %d\n', i);
-        %disp('term1');
-        %disp(term1);
-        %disp('term2');
-        %disp(term2);
-        %disp('velocity');
-        %disp(particle(i).Velocity);
-        
-        % apply velocity limits
-        particle(i).Velocity = max(particle(i).Velocity, MinVelocity);
-        particle(i).Velocity = min(particle(i).Velocity, MaxVelocity);
-        %disp('velocity after limits');
-        %disp(particle(i).Velocity);
-        
-        % update position
-        particle(i).Position = particle(i).Position + particle(i).Velocity;
-        
-        % apply lower and upper bound limits
-        particle(i).Position(:, 1) = ...
-            max(particle(i).Position(:, 1), bound.latLower);
-        particle(i).Position(:, 1) = ...
-            min(particle(i).Position(:, 1), bound.latUpper);
-        particle(i).Position(:, 2) = ...
-            max(particle(i).Position(:, 2), bound.lonLower);
-        particle(i).Position(:, 2) = ...
-            min(particle(i).Position(:, 2), bound.lonUpper);
-        
-        % cost evaluation
-        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-            particle(i).Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-            particle(i).Position, D, mean_temp, cov_mat_temp, K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-        
-        % Qparams.Xv = V;                 % use the same value as init
-        % Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
-        Qparams.Xa = particle(i).Position;
-        Qparams.Ta = fah2cel(temp_mean_ad);
-        Qparams.cov_ad = pm2_5_cov_ad;
-        [res, commMST, predMST] = costFunction(Qparams, params);
-
-        particle(i).Cost = res.cost;
-        particle(i).senQuality = res.F;
-        particle(i).mainCost = res.M;
-        %fprintf('particle %d\n', i);
-        %fprintf('Cost: %f senQ: %f mainCost: %f\n', particle(i).Cost, ...
-        %    particle(i).senQuality, particle(i).mainCost);
-        
-        % update personal best
-        if particle(i).Cost < particle(i).Best.Cost
-            fprintf('update personal best\n');
-            particle(i).Best.Position = particle(i).Position;
-            particle(i).Best.Cost = particle(i).Cost;
-            particle(i).Best.senQuality = particle(i).senQuality;
-            particle(i).Best.mainCost = particle(i).mainCost;
-            
-            % update the global best
-            if particle(i).Best.Cost < GlobalBest.Cost
-                fprintf('update global best\n');
-                GlobalBest = particle(i).Best;
-            end
-        end
-    end
-    
-    % store the best cost value
-    BestCosts(it) = GlobalBest.Cost;
-    
-    % display iteration information
-    fprintf('Iteration %d: Best Cost: %f senQ: %f mainCost: %f\n', ...
-        it, GlobalBest.Cost, GlobalBest.senQuality, GlobalBest.mainCost);
-    
-    % damping inertia coefficient
-    w = w * wdamp;
-end
-
+% plot the BestCosts curve
 figure;
-plot(BestCosts, 'LineWidth', 2);
+plot(res.BestCosts, 'LineWidth', 2);
 xlabel('Iteration');
 ylabel('Best Cost');
 
 % evaluation the GlobalBest and plot
-[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-    GlobalBest.Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-    GlobalBest.Position, D, mean_temp, cov_mat_temp, K_temp);
-temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+%[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+%    GlobalBest.Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+%    GlobalBest.Position, D, mean_temp, cov_mat_temp, K_temp);
+%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         
 % Qparams.Xv = V;                 % use the same value as init
 % Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
-Qparams.Xa = GlobalBest.Position;
-Qparams.Ta = fah2cel(temp_mean_ad);
-Qparams.cov_ad = pm2_5_cov_ad;
-[res, commMST, predMST] = costFunction(Qparams, params);
+%Qparams.Xa = GlobalBest.Position;
+%Qparams.Ta = fah2cel(temp_mean_ad);
+%Qparams.cov_ad = pm2_5_cov_ad;
+%[res, commMST, predMST] = costFunction(Qparams, params);
 
-plot_solution(GlobalBest.Position, predMST, c);
+%plot_solution(GlobalBest.Position, predMST, c);
 
 
 %% plot functions

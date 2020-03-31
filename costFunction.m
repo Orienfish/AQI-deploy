@@ -1,4 +1,4 @@
-function [res, G, pred] = costFunction(Qparams, params)
+function [out] = costFunction(Qparams, params)
 %% Cost function to minimize in PSO.
 %
 % Args:
@@ -17,14 +17,14 @@ function [res, G, pred] = costFunction(Qparams, params)
 %   params.logging: logging flag
 %
 % Return:
-%   res.cost: the cost of the current deployment A
-%   res.F: sensing quality of the solution
-%   res.M: maintenance cost of the solution
-%   G: the feasible connection graph of the current deployment A
-%   pred: the predecessor in MST of A
+%   out.cost: the cost of the current deployment A
+%   out.F: sensing quality of the solution
+%   out.M: maintenance cost of the solution
+%   out.G: the feasible connection graph of the current deployment A
+%   out.pred: the predecessor in MST of A
 addpath('./mlibs/');
 addpath('./lldistkm/');
-
+addpath('./gp/');
 G = zeros(params.m_A + 1); % init a matrix for connection graph
                            % first n entries are for Xv, the last one 
                            % is for the sink c. A single-direction MST.
@@ -78,8 +78,12 @@ if params.logging
     fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M, P);
     fprintf('total cost: %f\n', cost);
 end
-res.cost = cost;
-res.F = F;
-res.M = M;
+
+% fill in the output results
+out.cost = cost;
+out.F = F;
+out.M = M;
+out.G = G;
+out.pred = pred;
 end
 
