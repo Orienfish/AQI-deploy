@@ -25,12 +25,10 @@ function [out] = costFunction(Qparams, params)
 addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
-G = zeros(params.m_A + 1); % init a matrix for connection graph
-                           % first n entries are for Xv, the last one 
-                           % is for the sink c. A single-direction MST.
-                        
-% create the undirected graph and fill commMat
-% get the valid indexes directly connected to the sink
+
+G = zeros(params.m_A + 1); % init a symmetric matrix for connection graph
+
+% create the undirected graph and fill the matrix
 nodes = vertcat(Qparams.Xa, params.c);
 for p = 1:params.m_A+1
     for q = p+1:params.m_A+1

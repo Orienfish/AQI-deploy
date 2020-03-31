@@ -170,7 +170,7 @@ params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.logging = false;                 % logging flag
 % parameters of the cost function
-params.weights = [0.5 0.4 0.1];            % weights for sensing quality,
+params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
                                         % maintenance cost and penalty
 params.penalty = 100;                   % penalty for non-connected nodes
 
@@ -201,26 +201,15 @@ params.Cm = params.Cm - 0.5;            % need some margin
 res = PSO(Qparams, params, PSOparams);
 
 % plot the BestCosts curve
-figure;
+figure();
 plot(res.BestCosts, 'LineWidth', 2);
 xlabel('Iteration');
 ylabel('Best Cost');
 
-% evaluation the GlobalBest and plot
-%[pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-%    GlobalBest.Position, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-%    GlobalBest.Position, D, mean_temp, cov_mat_temp, K_temp);
-%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-        
-% Qparams.Xv = V;                 % use the same value as init
-% Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
-%Qparams.Xa = GlobalBest.Position;
-%Qparams.Ta = fah2cel(temp_mean_ad);
-%Qparams.cov_ad = pm2_5_cov_ad;
-%[res, commMST, predMST] = costFunction(Qparams, params);
-
-%plot_solution(GlobalBest.Position, predMST, c);
+% plot the solution
+nodes = vertcat(res.Position, c);
+[PSOTree, PSOpred] = MST(res.Position, c, R);
+plot_solution(nodes, PSOpred);
 
 
 %% plot functions
@@ -264,16 +253,14 @@ function plot_IDSQ(A, commMST, c)
     end   
 end
 
-function plot_solution(A, predMST, c)
+function plot_solution(nodes, pred)
     figure();
     geoaxes('NextPlot','add');
-    % generate list of nodes including the sink
-    nodes = vertcat(A, c);
     % plot connections from commMST
-    for i = 1:length(predMST)
-        if ~isnan(predMST(i)) && predMST(i) > 0
-            geoplot([nodes(i, 1) nodes(predMST(i), 1)], ...
-                [nodes(i, 2) nodes(predMST(i), 2)], 'b-*', 'LineWidth', 2);
+    for i = 1:length(pred)
+        if ~isnan(pred(i)) && pred(i) > 0
+            geoplot([nodes(i, 1) nodes(pred(i), 1)], ...
+                [nodes(i, 2) nodes(pred(i), 2)], 'b-*', 'LineWidth', 2);
         end
     end   
 end
