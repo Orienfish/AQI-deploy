@@ -19,6 +19,7 @@ function [out] = ABC(Qparams, params, ABCparams)
 %   parmas.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
+%   params.bound: bound for the area
 %   params.PSOparams.weights: 1x3 vectors for the PSOparams.weights
 %   params.penalty: penalty for non-connected nodes
 %   params.logging: logging flag
@@ -27,12 +28,9 @@ function [out] = ABC(Qparams, params, ABCparams)
 %   ABCparams.VarSize: matrix size of decision variables
 %   ABCparams.maxIter: maximum number of iterations
 %   ABCparams.nPop: population size
-%   ABCparams.chi: constriction factor
-%   ABCparams.w: inertia coefficient
-%   ABCparams.wdamp: damping ratio of inertia coefficient
-%   ABCparams.c1: personal acceleration coefficient
-%   ABCparams.c2: social acceleration coefficient
-%   ABCparams.bound: PSOparams.bound for the area
+%   ABCparams.nOnlooker: number of onlooker bees
+%   ABCparams.L: abandonment limit parameter (trial limit)
+%   ABCparams.a: acceleration coefficient upper bound
 %
 % Return:
 %   out.Position: the global best locations
@@ -44,110 +42,189 @@ addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
 
-
-%% ABC Settings
-MaxIt=200;              % Maximum Number of Iterations
-nPop=100;               % Population Size (Colony Size)
-nOnlooker=nPop;         % Number of Onlooker Bees
-L=round(0.6*nVar*nPop); % Abandonment Limit Parameter (Trial Limit)
-a=1;                    % Acceleration Coefficient Upper Bound
 %% Initialization
 % Empty Bee Structure
-empty_bee.Position=[];
-empty_bee.Cost=[];
+empty_bee.Position = [];
+empty_bee.Cost = [];
 % Initialize Population Array
-pop=repmat(empty_bee,nPop,1);
+pop = repmat(empty_bee, ABCparams.nPop, 1);
 % Initialize Best Solution Ever Found
-BestSol.Cost=inf;
+BestSol.Cost = inf;
+% Note: no need to init Position, senQuality, mainCost
+% they will be init in the initialization process
+
 % Create Initial Population
-for i=1:nPop
-    pop(i).Position=unifrnd(VarMin,VarMax,VarSize);
-    pop(i).Cost=CostFunction(pop(i).Position);
-    if pop(i).Cost<=BestSol.Cost
-        BestSol=pop(i);
+for i = 1:ABCparams.nPop
+    % generate random solution
+    pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
+        params.bound.latUpper, ABCparams.nVar, 1);
+    pop(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
+        params.bound.lonUpper, ABCparams.nVar, 1);
+    
+    % cost evaluation
+    [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+        pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+        Qparams.cov_d, params.K);
+    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+        pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+        Qparams.cov_temp_d, params.K_temp);
+    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+    
+    % setting the rest quality parameters
+    Qparams.Xa = particle(i).Position;
+    Qparams.Ta = fah2cel(temp_mean_ad);
+    Qparams.cov_ad = pm2_5_cov_ad;
+    res = costFunction(Qparams, params);
+    
+    pop(i).Cost = res.cost;
+    pop(i).senQuality = res.F;
+    pop(i).mainCost = res.M;
+    
+    % update the global best
+    if pop(i).Cost <= BestSol.Cost
+        BestSol = pop(i);
     end
 end
+
 % Abandonment Counter
-C=zeros(nPop,1);
+C = zeros(ABCparams.nPop,1);
+
 % Array to Hold Best Cost Values
-BestCost=zeros(MaxIt,1);
+BestCost = zeros(ABCparams.MaxIt,1);
+
+
 %% ABC Main Loop
-for it=1:MaxIt
-    
+for it = 1:ABCparams.MaxIt
     % Recruited Bees
-    for i=1:nPop
-        
+    for i = 1:ABCparams.nPop
         % Choose k randomly, not equal to i
-        K=[1:i-1 i+1:nPop];
-        k=K(randi([1 numel(K)]));
+        K = [1:i-1 i+1:ABCparams.nPop];
+        k = K(randi([1 numel(K)]));
         
         % Define Acceleration Coeff.
-        phi=a*unifrnd(-1,+1,VarSize);
+        phi = ABCparams.a * unifrnd(-1, +1, ABCparams.VarSize);
         
         % New Bee Position
-        newbee.Position=pop(i).Position+phi.*(pop(i).Position-pop(k).Position);
+        newbee.Position = pop(i).Position + phi .* (pop(i).Position - ...
+            pop(k).Position);
         
         % Evaluation
-        newbee.Cost=CostFunction(newbee.Position);
+        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            Qparams.cov_d, params.K);
+        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            Qparams.cov_temp_d, params.K_temp);
+        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+
+        % setting the rest quality parameters
+        Qparams.Xa = particle(i).Position;
+        Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.cov_ad = pm2_5_cov_ad;
+        res = costFunction(Qparams, params);
+        
+        newbee.Cost = res.Cost;
+        newbee.senQuality = res.F;
+        newbee.mainCost = res.M;
         
         % Comparision
-        if newbee.Cost<=pop(i).Cost
-            pop(i)=newbee;
+        if newbee.Cost <= pop(i).Cost
+            pop(i) = newbee;
         else
-            C(i)=C(i)+1;
-        end
-        
+            C(i) = C(i) + 1;
+        end     
     end
     
     % Calculate Fitness Values and Selection Probabilities
-    F=zeros(nPop,1);
+    F = zeros(ABCparams.nPop, 1);
     MeanCost = mean([pop.Cost]);
-    for i=1:nPop
-        F(i) = exp(-pop(i).Cost/MeanCost); % Convert Cost to Fitness
+    for i = 1:ABCparams.nPop
+        F(i) = exp(-pop(i).Cost / MeanCost); % Convert Cost to Fitness
     end
-    P=F/sum(F);
+    P = F / sum(F);
     
     % Onlooker Bees
     for m=1:nOnlooker
-        
         % Select Source Site
-        i=RouletteWheelSelection(P);
+        i = RouletteWheelSelection(P);
         
         % Choose k randomly, not equal to i
-        K=[1:i-1 i+1:nPop];
-        k=K(randi([1 numel(K)]));
+        K = [1:i-1 i+1:ABCparams.nPop];
+        k = K(randi([1 numel(K)]));
         
         % Define Acceleration Coeff.
-        phi=a*unifrnd(-1,+1,VarSize);
+        phi = ABCparams.a * unifrnd(-1, +1, ABCparams.VarSize);
         
         % New Bee Position
-        newbee.Position=pop(i).Position+phi.*(pop(i).Position-pop(k).Position);
+        newbee.Position = pop(i).Position + phi .* (pop(i).Position - ...
+            pop(k).Position);
         
         % Evaluation
-        newbee.Cost=CostFunction(newbee.Position);
+        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            Qparams.cov_d, params.K);
+        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            Qparams.cov_temp_d, params.K_temp);
+        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+
+        % setting the rest quality parameters
+        Qparams.Xa = particle(i).Position;
+        Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.cov_ad = pm2_5_cov_ad;
+        res = costFunction(Qparams, params);
+        
+        newbee.Cost = res.Cost;
+        newbee.senQuality = res.F;
+        newbee.mainCost = res.M;
         
         % Comparision
-        if newbee.Cost<=pop(i).Cost
-            pop(i)=newbee;
+        if newbee.Cost <= pop(i).Cost
+            pop(i) = newbee;
         else
-            C(i)=C(i)+1;
+            C(i) = C(i)+1;
         end
-        
     end
     
     % Scout Bees
-    for i=1:nPop
-        if C(i)>=L
-            pop(i).Position=unifrnd(VarMin,VarMax,VarSize);
-            pop(i).Cost=CostFunction(pop(i).Position);
-            C(i)=0;
+    for i = 1:ABCparams.nPop
+        if C(i) >= ABCparams.L
+            fprintf('Abandon current source!\n');
+            % generate random solution
+            pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
+                params.bound.latUpper, ABCparams.nVar, 1);
+            pop(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
+                params.bound.lonUpper, ABCparams.nVar, 1);
+            
+            % cost evaluation
+            [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+                pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+                Qparams.cov_d, params.K);
+            [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+                pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+                Qparams.cov_temp_d, params.K_temp);
+            temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+
+            % setting the rest quality parameters
+            Qparams.Xa = particle(i).Position;
+            Qparams.Ta = fah2cel(temp_mean_ad);
+            Qparams.cov_ad = pm2_5_cov_ad;
+            res = costFunction(Qparams, params);
+            
+            pop(i).Cost = res.cost;
+            pop(i).senQuality = res.F;
+            pop(i).mainCost = res.M;
+            
+            % reset counter
+            C(i) = 0;
         end
     end
     
     % Update Best Solution Ever Found
-    for i=1:nPop
-        if pop(i).Cost<=BestSol.Cost
-            BestSol=pop(i);
+    for i = 1:ABCparams.nPop
+        if pop(i).Cost <= BestSol.Cost
+            fprintf('update best solution!\n');
+            BestSol = pop(i);
         end
     end
     
@@ -155,8 +232,11 @@ for it=1:MaxIt
     BestCost(it)=BestSol.Cost;
     
     % Display Iteration Information
-    disp(['Iteration ' num2str(it) ': Best Cost = ' num2str(BestCost(it))]);
-    
+    fprintf('Iteration %d: Best Cost: %f senQ: %f mainCost: %f\n', ...
+        it, BestSol.Cost, BestSol.senQuality, BestSol.mainCost);
 end
+
+out = BestSol; % include position, cost, senQuality, mainCost
+out.BestCosts = BestCosts; % cost iteration curve
 end
 

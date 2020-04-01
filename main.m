@@ -129,6 +129,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
                                         % for temperature
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
+params.bound = bound;                   % bound for the area
 params.logging = false;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
@@ -155,7 +156,6 @@ PSOparams.w = PSOparams.chi;            % inertia coefficient
 PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
 PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
 PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
-PSOparams.bound = bound;                % bound for the area
 
 params.Cm = params.Cm - 0.5;            % need some margin
 
@@ -181,8 +181,23 @@ ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
 % parameters of ABC
 ABCparams.maxIter = 200;                % maximum number of iterations
 ABCparams.nPop = 50;                    % populaton size
-
+ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
+ABCparams.L = round(0.6 * ABCparams.nVar * ABCparams.nPop); 
+                                        % Abandonment Limit Parameter (Trial Limit)
+ABCparams.a = 1;                        % Acceleration Coefficient Upper Bound
+                                        
 resABC = ABC(Qparams, params, ABCparams);
+
+% plot the BestCosts curve
+figure();
+plot(resABC.BestCosts, 'LineWidth', 2);
+xlabel('Iteration');
+ylabel('Best Cost');
+
+% plot the solution
+[ABCTree, ABCpred] = MST(resABC.Position, c, R);
+nodesABC = vertcat(resABCA.Position, c);
+plot_solution(nodesABC, ABCpred);
 
 %% plot functions
 function bubbleplot(lat, lon, title)

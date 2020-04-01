@@ -19,6 +19,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   parmas.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
+%   params.bound: bound for the area
 %   params.PSOparams.weights: 1x3 vectors for the PSOparams.weights
 %   params.penalty: penalty for non-connected nodes
 %   params.logging: logging flag
@@ -32,7 +33,6 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   PSOparams.wdamp: damping ratio of inertia coefficient
 %   PSOparams.c1: personal acceleration coefficient
 %   PSOparams.c2: social acceleration coefficient
-%   PSOparams.bound: PSOparams.bound for the area
 %
 % Return:
 %   out.Position: the global best locations
@@ -46,8 +46,8 @@ addpath('./gp/');
 
 %% parameters of PSO
 % velocity limits
-MaxVelocity = 0.2 * [(PSOparams.bound.latUpper - PSOparams.bound.latLower), ...
-    (PSOparams.bound.lonUpper - PSOparams.bound.lonLower)];
+MaxVelocity = 0.2 * [(params.bound.latUpper - params.bound.latLower), ...
+    (params.bound.lonUpper - params.bound.lonLower)];
 MinVelocity = - MaxVelocity;
 
 %% initialization
@@ -68,15 +68,15 @@ particle = repmat(empty_particle, PSOparams.nPop, 1);
 % initialize global best
 GlobalBest.Cost = inf;
 % Note: no need to init Position, senQuality, mainCost
-% they PSOparams.will be init in the initialization process
+% they will be init in the initialization process
 
 % initialize population members
-for i=1:PSOparams.nPop
+for i = 1:PSOparams.nPop
     % generate random solution
-    particle(i).Position(:, 1) = unifrnd(PSOparams.bound.latLower, ...
-        PSOparams.bound.latUpper, PSOparams.nVar, 1);
-    particle(i).Position(:, 2) = unifrnd(PSOparams.bound.lonLower, ...
-        PSOparams.bound.lonUpper, PSOparams.nVar, 1);
+    particle(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
+        params.bound.latUpper, PSOparams.nVar, 1);
+    particle(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
+        params.bound.lonUpper, PSOparams.nVar, 1);
     
     % initialize velocity
     particle(i).Velocity = zeros(PSOparams.VarSize);
@@ -133,13 +133,13 @@ for it = 1:PSOparams.maxIter
         
         % apply loPSOparams.wer and upper PSOparams.bound limits
         particle(i).Position(:, 1) = ...
-            max(particle(i).Position(:, 1), PSOparams.bound.latLower);
+            max(particle(i).Position(:, 1), params.bound.latLower);
         particle(i).Position(:, 1) = ...
-            min(particle(i).Position(:, 1), PSOparams.bound.latUpper);
+            min(particle(i).Position(:, 1), params.bound.latUpper);
         particle(i).Position(:, 2) = ...
-            max(particle(i).Position(:, 2), PSOparams.bound.lonLower);
+            max(particle(i).Position(:, 2), params.bound.lonLower);
         particle(i).Position(:, 2) = ...
-            min(particle(i).Position(:, 2), PSOparams.bound.lonUpper);
+            min(particle(i).Position(:, 2), params.bound.lonUpper);
         
         % cost evaluation
         [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
