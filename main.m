@@ -180,11 +180,11 @@ ABCparams.nVar = m_A;                   % number of unknown decision variables
 ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
 % parameters of ABC
 ABCparams.maxIter = 100;                % maximum number of iterations
-ABCparams.nPop = 50;                    % populaton size
+ABCparams.nPop = 10;                    % populaton size
 ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
-ABCparams.L = round(0.6 * ABCparams.nVar * ABCparams.nPop); 
+ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                         % Abandonment Limit Parameter (Trial Limit)
-ABCparams.a = 1;                        % Acceleration Coefficient Upper Bound
+ABCparams.a = 0.4;                        % Acceleration Coefficient Upper Bound
                                         
 resABC = ABC(Qparams, params, ABCparams);
 
@@ -196,7 +196,7 @@ ylabel('Best Cost');
 
 % plot the solution
 [ABCTree, ABCpred] = MST(resABC.Position, c, R);
-nodesABC = vertcat(resABCA.Position, c);
+nodesABC = vertcat(resABC.Position, c);
 plot_solution(nodesABC, ABCpred);
 
 %% plot functions

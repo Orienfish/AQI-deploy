@@ -131,7 +131,7 @@ for it = 1:PSOparams.maxIter
         % update position
         particle(i).Position = particle(i).Position + particle(i).Velocity;
         
-        % apply loPSOparams.wer and upper PSOparams.bound limits
+        % apply lower and upper params.bound limits
         particle(i).Position(:, 1) = ...
             max(particle(i).Position(:, 1), params.bound.latLower);
         particle(i).Position(:, 1) = ...

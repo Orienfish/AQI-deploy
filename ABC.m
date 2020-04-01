@@ -90,7 +90,7 @@ end
 C = zeros(ABCparams.nPop,1);
 
 % Array to Hold Best Cost Values
-BestCost = zeros(ABCparams.maxIter, 1);
+BestCosts = zeros(ABCparams.maxIter, 1);
 
 
 %% ABC Main Loop
@@ -107,18 +107,30 @@ for it = 1:ABCparams.maxIter
         % New Bee Position
         newbee.Position = pop(i).Position + phi .* (pop(i).Position - ...
             pop(k).Position);
+        %disp('position shift');
+        %disp(phi .* (pop(i).Position - pop(k).Position));
+        
+        % apply lower and upper params.bound limits
+        newbee.Position(:, 1) = ...
+            max(newbee.Position(:, 1), params.bound.latLower);
+        newbee.Position(:, 1) = ...
+            min(newbee.Position(:, 1), params.bound.latUpper);
+        newbee.Position(:, 2) = ...
+            max(newbee.Position(:, 2), params.bound.lonLower);
+        newbee.Position(:, 2) = ...
+            min(newbee.Position(:, 2), params.bound.lonUpper);
         
         % Evaluation
         [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-            pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            newbee.Position, Qparams.Xd, Qparams.mean_d, ...
             Qparams.cov_d, params.K);
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-            pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            newbee.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
         temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
-        Qparams.Xa = pop(i).Position;
+        Qparams.Xa = newbee.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
@@ -159,17 +171,27 @@ for it = 1:ABCparams.maxIter
         newbee.Position = pop(i).Position + phi .* (pop(i).Position - ...
             pop(k).Position);
         
+        % apply lower and upper params.bound limits
+        newbee.Position(:, 1) = ...
+            max(newbee.Position(:, 1), params.bound.latLower);
+        newbee.Position(:, 1) = ...
+            min(newbee.Position(:, 1), params.bound.latUpper);
+        newbee.Position(:, 2) = ...
+            max(newbee.Position(:, 2), params.bound.lonLower);
+        newbee.Position(:, 2) = ...
+            min(newbee.Position(:, 2), params.bound.lonUpper);
+        
         % Evaluation
         [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-            pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            newbee.Position, Qparams.Xd, Qparams.mean_d, ...
             Qparams.cov_d, params.K);
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-            pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            newbee.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
         temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
-        Qparams.Xa = pop(i).Position;
+        Qparams.Xa = newbee.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
@@ -229,7 +251,7 @@ for it = 1:ABCparams.maxIter
     end
     
     % Store Best Cost Ever Found
-    BestCost(it)=BestSol.Cost;
+    BestCosts(it)=BestSol.Cost;
     
     % Display Iteration Information
     fprintf('Iteration %d: Best Cost: %f senQ: %f mainCost: %f\n', ...
