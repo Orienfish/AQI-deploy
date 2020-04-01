@@ -139,9 +139,9 @@ params.penalty = 100;                   % penalty for non-connected nodes
 %% call the greedy heuristic IDSQ
 fprintf('Calling IDSQ...\n');
 IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
-resIDSQ = IDSQ(Qparams, params, IDSQparams);
-plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+%resIDSQ = IDSQ(Qparams, params, IDSQparams);
+%plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+%fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
 
 %% call PSO
 fprintf('Calling PSO...\n');
@@ -159,18 +159,18 @@ PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
 
 params.Cm = params.Cm - 0.5;            % need some margin
 
-resPSO = PSO(Qparams, params, PSOparams);
+%resPSO = PSO(Qparams, params, PSOparams);
 
 % plot the BestCosts curve
-figure();
-plot(resPSO.BestCosts, 'LineWidth', 2);
-xlabel('Iteration');
-ylabel('Best Cost');
+%figure();
+%plot(resPSO.BestCosts, 'LineWidth', 2);
+%xlabel('Iteration');
+%ylabel('Best Cost');
 
 % plot the solution
-[PSOTree, PSOpred] = MST(resPSO.Position, c, R);
-nodesPSO = vertcat(resPSO.Position, c);
-plot_solution(nodesPSO, PSOpred);
+%[PSOTree, PSOpred] = MST(resPSO.Position, c, R);
+%nodesPSO = vertcat(resPSO.Position, c);
+%plot_solution(nodesPSO, PSOpred);
 
 
 %% call ABC
@@ -179,7 +179,7 @@ fprintf('Calling ABC...\n');
 ABCparams.nVar = m_A;                   % number of unknown decision variables
 ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
 % parameters of ABC
-ABCparams.maxIter = 200;                % maximum number of iterations
+ABCparams.maxIter = 100;                % maximum number of iterations
 ABCparams.nPop = 50;                    % populaton size
 ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
 ABCparams.L = round(0.6 * ABCparams.nVar * ABCparams.nPop); 

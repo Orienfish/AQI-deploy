@@ -71,7 +71,7 @@ for i = 1:ABCparams.nPop
     temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
     
     % setting the rest quality parameters
-    Qparams.Xa = particle(i).Position;
+    Qparams.Xa = pop(i).Position;
     Qparams.Ta = fah2cel(temp_mean_ad);
     Qparams.cov_ad = pm2_5_cov_ad;
     res = costFunction(Qparams, params);
@@ -90,11 +90,11 @@ end
 C = zeros(ABCparams.nPop,1);
 
 % Array to Hold Best Cost Values
-BestCost = zeros(ABCparams.MaxIt,1);
+BestCost = zeros(ABCparams.maxIter, 1);
 
 
 %% ABC Main Loop
-for it = 1:ABCparams.MaxIt
+for it = 1:ABCparams.maxIter
     % Recruited Bees
     for i = 1:ABCparams.nPop
         % Choose k randomly, not equal to i
@@ -118,12 +118,12 @@ for it = 1:ABCparams.MaxIt
         temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
-        Qparams.Xa = particle(i).Position;
+        Qparams.Xa = pop(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
         
-        newbee.Cost = res.Cost;
+        newbee.Cost = res.cost;
         newbee.senQuality = res.F;
         newbee.mainCost = res.M;
         
@@ -144,7 +144,7 @@ for it = 1:ABCparams.MaxIt
     P = F / sum(F);
     
     % Onlooker Bees
-    for m=1:nOnlooker
+    for m=1:ABCparams.nOnlooker
         % Select Source Site
         i = RouletteWheelSelection(P);
         
@@ -169,12 +169,12 @@ for it = 1:ABCparams.MaxIt
         temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
-        Qparams.Xa = particle(i).Position;
+        Qparams.Xa = pop(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
         
-        newbee.Cost = res.Cost;
+        newbee.Cost = res.cost;
         newbee.senQuality = res.F;
         newbee.mainCost = res.M;
         
@@ -206,7 +206,7 @@ for it = 1:ABCparams.MaxIt
             temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
             % setting the rest quality parameters
-            Qparams.Xa = particle(i).Position;
+            Qparams.Xa = pop(i).Position;
             Qparams.Ta = fah2cel(temp_mean_ad);
             Qparams.cov_ad = pm2_5_cov_ad;
             res = costFunction(Qparams, params);
@@ -222,7 +222,7 @@ for it = 1:ABCparams.MaxIt
     
     % Update Best Solution Ever Found
     for i = 1:ABCparams.nPop
-        if pop(i).Cost <= BestSol.Cost
+        if pop(i).Cost < BestSol.Cost
             fprintf('update best solution!\n');
             BestSol = pop(i);
         end
