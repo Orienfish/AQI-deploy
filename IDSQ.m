@@ -92,19 +92,19 @@ for i = 1:params.m_A
             curM = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
                 commMST, predMST, params.logging);
             curRes = IDSQparams.alpha * (curF - lastF) + ...
-                (1 - IDSQparams.alpha) * (curM - lastM);
+                (1 - IDSQparams.alpha) * (curM.C - lastM);
             
             if params.logging
                 fprintf('node: %d senQ: %f main cost: %f res: %f\n', ...
-                    j, curF, curM, curRes);
+                    j, curF, curM.C, curRes);
             end
             
             % compare and update
-            if curRes > maxRes && curM < params.Cm
+            if curRes > maxRes && curM.C < params.Cm
                 maxRes = curRes;
                 maxRes_idx = j;
                 maxF = curF;
-                maxM = curM;
+                maxM = curM.C;
             end
             
             % reset the Xa index

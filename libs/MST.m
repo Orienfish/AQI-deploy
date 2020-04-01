@@ -1,4 +1,4 @@
-function [Tree, pred] = MST(A, c, R)
+function [G, pred] = MST(A, c, R)
 %% Get the minimal spanning tree from the locations of the sensors and 
 %  the sink.
 %

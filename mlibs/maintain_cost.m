@@ -1,4 +1,4 @@
-function [C] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
+function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %% Compute the maintenance cost from a given deployment.
 %  Note deployment Xa is a complete list. Not all nodes are connected.
 %
@@ -11,7 +11,9 @@ function [C] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %   logging: logging flag
 %
 % Return:
-%   C: the maintenance cost
+%   out.C: the maintenance cost
+%   out.batlife: list of battery lifetime in days
+%   out.cirlife: list of circuit lifetime in days
 
 % settings for sensor workloads
 Pto = 0.52;    % 520mW
@@ -35,6 +37,10 @@ c_bat = 1;        % cost to replace battery
 V_gs = 1.1;       % gate voltage
 c_node = 100;     % cost to replace node
 C = 0;            % total maintenance cost
+
+% init return lifetime list
+out.batlife = zeros(size(Xa, 1), 1);
+out.cirlife = zeros(size(Xa, 1), 1);
 
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
@@ -62,6 +68,10 @@ for i = 1:size(Xa, 1)
         % update total maintenance cost
         nodeC = c_bat / batlife_day + c_node / cirlife_day;
         C = C + nodeC;
+        
+        % update output list
+        out.batlife(i) = batlife_day;
+        out.cirlife(i) = cirlife_day;
 
         if logging
             fprintf('  node %d amb temp: %f avg pwr: %f\n', i, Ta(i), avgPwr);
@@ -70,5 +80,7 @@ for i = 1:size(Xa, 1)
         end
     end
 end
+
+out.C = C;
 end
 

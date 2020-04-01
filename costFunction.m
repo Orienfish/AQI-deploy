@@ -70,17 +70,17 @@ M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...
 P = params.penalty * (sum(~connected));
 
 % final cost
-cost = params.weights(1) * (-F) + params.weights(2) * max(M - params.Cm, 0) ... 
+cost = params.weights(1) * (-F) + params.weights(2) * max(M.C - params.Cm, 0) ... 
     + params.weights(3) * P;
 if params.logging
-    fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M, P);
+    fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M.C, P);
     fprintf('total cost: %f\n', cost);
 end
 
 % fill in the output results
 out.cost = cost;
 out.F = F;
-out.M = M;
+out.M = M.C;
 out.G = G;
 out.pred = pred;
 end

@@ -168,7 +168,7 @@ params.Cm = params.Cm - 0.5;            % need some margin
 %ylabel('Best Cost');
 
 % plot the solution
-%[PSOTree, PSOpred] = MST(resPSO.Position, c, R);
+%[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
 %nodesPSO = vertcat(resPSO.Position, c);
 %plot_solution(nodesPSO, PSOpred);
 
@@ -184,7 +184,7 @@ ABCparams.nPop = 10;                    % populaton size
 ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
 ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                         % Abandonment Limit Parameter (Trial Limit)
-ABCparams.a = 0.4;                        % Acceleration Coefficient Upper Bound
+ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
                                         
 resABC = ABC(Qparams, params, ABCparams);
 
@@ -195,9 +195,24 @@ xlabel('Iteration');
 ylabel('Best Cost');
 
 % plot the solution
-[ABCTree, ABCpred] = MST(resABC.Position, c, R);
+[ABC_G, ABCpred] = MST(resABC.Position, c, R);
 nodesABC = vertcat(resABC.Position, c);
 plot_solution(nodesABC, ABCpred);
+
+% plot lifetime of each node
+connected = ~isnan(ABCpred); % a logical array of connected sensors
+[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+    resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+    Qparams.cov_temp_d, params.K_temp);
+temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+Qparams.Xa = resABC.Position;
+Qparams.Ta = fah2cel(temp_mean_ad);
+
+% calculate the maintenance cost of connected sensors
+M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
+    params.logging);
+bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+    M.cirlife, 'lifetime of nodes');
 
 %% plot functions
 function bubbleplot(lat, lon, title)
