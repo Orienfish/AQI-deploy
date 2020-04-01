@@ -1,5 +1,5 @@
 function [out] = PSO(Qparams, params, PSOparams)
-%% Run the Particle SPSOparams.warm Optimization.
+%% Run the Particle Swarm Optimization.
 %
 % Args:
 %   Qparams.Xv: list of reference locations to predict, [lat lon]
@@ -23,7 +23,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   params.penalty: penalty for non-connected nodes
 %   params.logging: logging flag
 %
-%   PSOparams.nVar: number of unknoPSOparams.wn decision variables
+%   PSOparams.nVar: number of unknown decision variables
 %   PSOparams.VarSize: matrix size of decision variables
 %   PSOparams.maxIter: maximum number of iterations
 %   PSOparams.nPop: population size

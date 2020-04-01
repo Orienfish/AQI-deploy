@@ -146,10 +146,10 @@ fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
 fprintf('Calling PSO...\n');
 % problem definition
 PSOparams.nVar = m_A;                   % number of unknown decision variables
-PSOparams.VarSize = [PSOparams.nVar 2]; % matrix size of decision variables
+PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
 % parameters of PSO
 PSOparams.maxIter = 100;                % maximum number of iterations
-PSOparams.nPop = 10;                    % populaton size
+PSOparams.nPop = 50;                    % populaton size
 PSOparams.chi = 0.729;                  % constriction factor
 PSOparams.w = PSOparams.chi;            % inertia coefficient
 PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
@@ -172,6 +172,17 @@ ylabel('Best Cost');
 nodesPSO = vertcat(resPSO.Position, c);
 plot_solution(nodesPSO, PSOpred);
 
+
+%% call ABC
+fprintf('Calling ABC...\n');
+% problem definition
+ABCparams.nVar = m_A;                   % number of unknown decision variables
+ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
+% parameters of ABC
+ABCparams.maxIter = 200;                % maximum number of iterations
+ABCparams.nPop = 50;                    % populaton size
+
+resABC = ABC(Qparams, params, ABCparams);
 
 %% plot functions
 function bubbleplot(lat, lon, title)
