@@ -29,7 +29,7 @@ params.f = 300e6;        % 300MHz clock frequency
 params.Vdd = 3.3;        % 3.3v supply voltage
 
 % settings for battery
-cap_bat = 2000;   % initial battery capacity in mAh
+cap_bat = 20000;   % initial battery capacity in mAh
 dt_bat_h = 1;     % time resolution of battery in hours
 c_bat = 1;        % cost to replace battery
 
@@ -57,7 +57,7 @@ for i = 1:size(Xa, 1)
         [stbPwr, stbTc] = stbPower(params, Ta(i));
 
         % estimate battery lifetime in days
-        I_mA = stbPwr * 1000 / V; % convert from W to mW then calculate average current draw
+        I_mA = stbPwr * 1000 / params.Vdd; % convert from W to mW then calculate average current draw
         batlife_h = bat_lifetime(cap_bat, Ta(i), I_mA, dt_bat_h);
         batlife_day = batlife_h / 24;
 
@@ -73,11 +73,12 @@ for i = 1:size(Xa, 1)
         out.batlife(i) = batlife_day;
         out.cirlife(i) = cirlife_day;
 
-        if logging
-            fprintf('  node %d amb temp: %f avg pwr: %f\n', i, Ta(i), avgPwr);
-            fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
-                batlife_day, cirlife_day, nodeC);
-        end
+        %if logging
+        %    fprintf('  node %d amb temp: %f avg pwr: %f core temp: %f\n', ...
+        %        i, Ta(i), stbPwr, stbTc);
+        %    fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
+        %        batlife_day, cirlife_day, nodeC);
+        %end
     end
 end
 

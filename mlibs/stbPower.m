@@ -19,7 +19,7 @@ function [stbPwr, stbTc] = stbPower(params, Tamb)
 %   stbTc: stabilized core temperature in Kelvin
 curPwr = 0;
 Tc_old = Tamb;    % initial core temperature in Celsius
-eps = 1e-2;       % error bound in the iteration
+eps = 1e-1;       % error bound in the iteration
 iter = 0;
 while 1
     curPwr = getPower(params, Tc_old + 273.15);
@@ -34,7 +34,7 @@ while 1
 end
 stbPwr = curPwr;
 stbTc = Tc_old + 273.15; % convert to Kelvin
-fprintf('stabilized pwr: %f stabilized core temperature in Celsius: %f\n', ...
-    stbPwr, Tc_old);
+%fprintf('ambient temp: %f core temp: %f\n', Tamb, Tc_old);
+%fprintf('stabilized pwr: %f\n', stbPwr);
 end
 

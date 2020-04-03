@@ -14,7 +14,7 @@ diary 'log.txt';
 % V - reference locations
 % A - deployment plan
 m_A = 20;
-Cm = 8;
+Cm = 4.1;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -61,7 +61,7 @@ for i = 1:n_latV
     end
 end
 fprintf('Generate V with size %d x %d\n', num2str(n_latV), num2str(n_lonV));
-%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
+bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
 % pm2_5
@@ -103,8 +103,8 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% get the estimated mean and cov at V
 [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-%bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
+bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
 %temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
@@ -124,14 +124,14 @@ Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 % set parameters
 params.m_A = m_A;                       % number of sensors to deploy
 params.Cm = Cm;                         % maintenance cost budget
-params.Cm = params.Cm - 0.5;            % need some margin
+% params.Cm = params.Cm - 0.5;            % need some margin
 params.K = K_pm2_5;                     % the fitted RBF kernel function
 params.K_temp = K_temp;                 % the fitted RBF kernel function 
                                         % for temperature
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = false;                 % logging flag
+params.logging = true;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
                                         % maintenance cost and penalty
@@ -140,9 +140,9 @@ params.penalty = 100;                   % penalty for non-connected nodes
 %% call the greedy heuristic IDSQ
 fprintf('Calling IDSQ...\n');
 IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
-%resIDSQ = IDSQ(Qparams, params, IDSQparams);
-%plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-%fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+resIDSQ = IDSQ(Qparams, params, IDSQparams);
+plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
 
 %% call PSO
 fprintf('Calling PSO...\n');
@@ -158,33 +158,33 @@ PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
 PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
 PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
 
-resPSO = PSO(Qparams, params, PSOparams);
+%resPSO = PSO(Qparams, params, PSOparams);
 
 % plot the BestCosts curve
-figure();
-plot(resPSO.BestCosts, 'LineWidth', 2);
-xlabel('Iteration');
-ylabel('Best Cost');
+%figure();
+%plot(resPSO.BestCosts, 'LineWidth', 2);
+%xlabel('Iteration');
+%ylabel('Best Cost');
 
 % plot the solution
-[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
-nodesPSO = vertcat(resPSO.Position, c);
-plot_solution(nodesPSO, PSOpred);
+%[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
+%nodesPSO = vertcat(resPSO.Position, c);
+%plot_solution(nodesPSO, PSOpred);
 
 % plot lifetime of each node
-connected = ~isnan(PSOpred); % a logical array of connected sensors
-[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-    resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
-    Qparams.cov_temp_d, params.K_temp);
-temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-Qparams.Xa = resPSO.Position;
-Qparams.Ta = fah2cel(temp_mean_ad);
+%connected = ~isnan(PSOpred); % a logical array of connected sensors
+%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+%    resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+%    Qparams.cov_temp_d, params.K_temp);
+%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+%Qparams.Xa = resPSO.Position;
+%Qparams.Ta = fah2cel(temp_mean_ad);
 
 % calculate the maintenance cost of connected sensors
-M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
-    params.logging);
-bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-    M.cirlife, 'lifetime of nodes from PSO');
+%M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
+%    params.logging);
+%bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+%    M.cirlife, 'lifetime of nodes from PSO');
 
 
 %% call ABC
@@ -200,33 +200,33 @@ ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop);
                                         % Abandonment Limit Parameter (Trial Limit)
 ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
                                         
-resABC = ABC(Qparams, params, ABCparams);
+%resABC = ABC(Qparams, params, ABCparams);
 
 % plot the BestCosts curve
-figure();
-plot(resABC.BestCosts, 'LineWidth', 2);
-xlabel('Iteration');
-ylabel('Best Cost');
+%figure();
+%plot(resABC.BestCosts, 'LineWidth', 2);
+%xlabel('Iteration');
+%ylabel('Best Cost');
 
 % plot the solution
-[ABC_G, ABCpred] = MST(resABC.Position, c, R);
-nodesABC = vertcat(resABC.Position, c);
-plot_solution(nodesABC, ABCpred);
+%[ABC_G, ABCpred] = MST(resABC.Position, c, R);
+%nodesABC = vertcat(resABC.Position, c);
+%plot_solution(nodesABC, ABCpred);
 
 % plot lifetime of each node
-connected = ~isnan(ABCpred); % a logical array of connected sensors
-[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-    resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
-    Qparams.cov_temp_d, params.K_temp);
-temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-Qparams.Xa = resABC.Position;
-Qparams.Ta = fah2cel(temp_mean_ad);
+%connected = ~isnan(ABCpred); % a logical array of connected sensors
+%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+%    resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+%    Qparams.cov_temp_d, params.K_temp);
+%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+%Qparams.Xa = resABC.Position;
+%Qparams.Ta = fah2cel(temp_mean_ad);
 
 % calculate the maintenance cost of connected sensors
-M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
-    params.logging);
-bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-    M.cirlife, 'lifetime of nodes from ABC');
+%M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
+%    params.logging);
+%bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+%    M.cirlife, 'lifetime of nodes from ABC');
 
 %% plot functions
 function bubbleplot(lat, lon, title)

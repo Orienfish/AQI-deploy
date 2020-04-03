@@ -66,8 +66,17 @@ plot(dist, Ptx);
 title('Average transmission power under various distance');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% test average power consumption and tddb lifetime under different distance
+% test average power consumption, battery lifetime and tddb lifetime 
+% under different distance and ambient temperature
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_amb = 5;
+Tamb = linspace(0, 40, n_amb);
+n_dist = 41;
+dist = linspace(0, 10, n_dist);
+avgPwr = zeros(n_amb, n_dist);
+MTTF_dist = zeros(n_amb, n_dist);
+batlife_dist = zeros(n_amb, n_dist);
+% settings for power
 params.Btx = 2500;       % 20kbps = 2500B/s
 params.Brx = 2500;
 params.Ltx = 1e3;        % 1kB
@@ -78,16 +87,22 @@ params.tsen = 0.3;       % 300ms
 params.T = 10;           % 10s
 params.Vdd = 3.3;          % 3.3v
 params.f = 300e6;        % 300MHz
-n_amb = 5;
-Tamb = linspace(0, 40, n_amb);
-avgPwr = zeros(n_amb, n_dist);
-MTTF_dist = zeros(n_amb, n_dist);
+% settings for battery
+cap_bat = 20000;   % initial battery capacity in mAh
+dt_bat_h = 1;     % time resolution of battery in hours
+
 for k = 1:n_amb
     for i = 1:n_dist
         params.dtx = dist(i);
         [stbPwr, stbTc] = stbPower(params, Tamb(k));
+        
         avgPwr(k, i) = stbPwr;
         MTTF_dist(k, i) = mttf_tddb(stbTc);
+        
+        % convert from W to mW then calculate average current draw
+        I_mA = stbPwr * 1000 / params.Vdd; 
+        batlife_h = bat_lifetime(cap_bat, Tamb(k), I_mA, dt_bat_h);
+        batlife_dist(k, i) = batlife_h;
     end
 end
 figure(5);
@@ -102,3 +117,9 @@ for k = 1:n_amb
     hold on;
 end
 title('Average tddb lifetime under various distance and ambient temperature');
+figure(7);
+for k = 1:n_amb
+    plot(dist, batlife_dist(k, :));
+    hold on;
+end
+title('Average battery lifetime under various distance and ambient temperature');
