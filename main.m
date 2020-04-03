@@ -13,7 +13,7 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 20;
+m_A = 10;
 Cm = 4.1;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset

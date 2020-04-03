@@ -19,9 +19,10 @@ function [mean_vd, cov_vd] = gp_predict_knownD(Xv, Xd, mean_d, cov_d, K)
 Sigma_VD = gen_Sigma(Xv, Xd, K);
 Sigma_DV = Sigma_VD';
 Sigma_VV = gen_Sigma(Xv, Xv, K);
+cov_d_inv = inv(cov_d);
 
 % calculate mean vector and covariance matrix
-mean_vd = Sigma_VD * inv(cov_d) * mean_d;
-cov_vd = Sigma_VV - Sigma_VD * inv(cov_d) * Sigma_DV;
+mean_vd = Sigma_VD * cov_d_inv * mean_d;
+cov_vd = Sigma_VV - Sigma_VD * cov_d_inv * Sigma_DV;
 end
 
