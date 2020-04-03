@@ -23,6 +23,7 @@ cov_ad_inv = inv(cov_ad);
 cov_va = cov_vd - Sigma_VA * cov_ad_inv * Sigma_AV;
 % n = size(cov_va, 1);
 H_XvXa = 0.5 * log(det(cov_va)); % the same part: 0.5 * n * log(2 * pi * exp(1));
+%fprintf('H_Xv: %f, H_XvXa: %f\n', H_Xv, H_XvXa);
 
 % calculate the sensing quality
 senseQuality = H_Xv - H_XvXa;

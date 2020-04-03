@@ -21,6 +21,12 @@ thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
 R = 10;                            % communication range of sensors in km
 
+% boolean variables deciding whether to run each algorithm
+runIDSQ = true;
+runPSO = false;
+runABC = false;
+
+
 %% pre-process
 fprintf('start pre-processing...\n');
 % get the mean, var and count of each type of data
@@ -138,95 +144,100 @@ params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
 params.penalty = 100;                   % penalty for non-connected nodes
 
 %% call the greedy heuristic IDSQ
-fprintf('Calling IDSQ...\n');
-IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
-resIDSQ = IDSQ(Qparams, params, IDSQparams);
-plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+if runIDSQ
+    fprintf('Calling IDSQ...\n');
+    IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
+    resIDSQ = IDSQ(Qparams, params, IDSQparams);
+    plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+    fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+end
 
 %% call PSO
-fprintf('Calling PSO...\n');
-% problem definition
-PSOparams.nVar = m_A;                   % number of unknown decision variables
-PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
-% parameters of PSO
-PSOparams.maxIter = 100;                % maximum number of iterations
-PSOparams.nPop = 50;                    % populaton size
-PSOparams.chi = 0.729;                  % constriction factor
-PSOparams.w = PSOparams.chi;            % inertia coefficient
-PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
-PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
-PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
+if run PSO
+    fprintf('Calling PSO...\n');
+    % problem definition
+    PSOparams.nVar = m_A;                   % number of unknown decision variables
+    PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
+    % parameters of PSO
+    PSOparams.maxIter = 100;                % maximum number of iterations
+    PSOparams.nPop = 50;                    % populaton size
+    PSOparams.chi = 0.729;                  % constriction factor
+    PSOparams.w = PSOparams.chi;            % inertia coefficient
+    PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
+    PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
+    PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
 
-%resPSO = PSO(Qparams, params, PSOparams);
+    resPSO = PSO(Qparams, params, PSOparams);
 
-% plot the BestCosts curve
-%figure();
-%plot(resPSO.BestCosts, 'LineWidth', 2);
-%xlabel('Iteration');
-%ylabel('Best Cost');
+    % plot the BestCosts curve
+    figure();
+    plot(resPSO.BestCosts, 'LineWidth', 2);
+    xlabel('Iteration');
+    ylabel('Best Cost');
 
-% plot the solution
-%[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
-%nodesPSO = vertcat(resPSO.Position, c);
-%plot_solution(nodesPSO, PSOpred);
+    % plot the solution
+    [PSO_G, PSOpred] = MST(resPSO.Position, c, R);
+    nodesPSO = vertcat(resPSO.Position, c);
+    plot_solution(nodesPSO, PSOpred);
 
-% plot lifetime of each node
-%connected = ~isnan(PSOpred); % a logical array of connected sensors
-%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-%    resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
-%    Qparams.cov_temp_d, params.K_temp);
-%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-%Qparams.Xa = resPSO.Position;
-%Qparams.Ta = fah2cel(temp_mean_ad);
+    % plot lifetime of each node
+    connected = ~isnan(PSOpred); % a logical array of connected sensors
+    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+        resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+        Qparams.cov_temp_d, params.K_temp);
+    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+    Qparams.Xa = resPSO.Position;
+    Qparams.Ta = fah2cel(temp_mean_ad);
 
-% calculate the maintenance cost of connected sensors
-%M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
-%    params.logging);
-%bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-%    M.cirlife, 'lifetime of nodes from PSO');
-
+    % calculate the maintenance cost of connected sensors
+    M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
+        params.logging);
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+        M.cirlife, 'lifetime of nodes from PSO');
+end
 
 %% call ABC
-fprintf('Calling ABC...\n');
-% problem definition
-ABCparams.nVar = m_A;                   % number of unknown decision variables
-ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
-% parameters of ABC
-ABCparams.maxIter = 100;                % maximum number of iterations
-ABCparams.nPop = 50;                    % populaton size
-ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
-ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
-                                        % Abandonment Limit Parameter (Trial Limit)
-ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
-                                        
-%resABC = ABC(Qparams, params, ABCparams);
+if run ABC
+    fprintf('Calling ABC...\n');
+    % problem definition
+    ABCparams.nVar = m_A;                   % number of unknown decision variables
+    ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
+    % parameters of ABC
+    ABCparams.maxIter = 100;                % maximum number of iterations
+    ABCparams.nPop = 50;                    % populaton size
+    ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
+    ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
+                                            % Abandonment Limit Parameter (Trial Limit)
+    ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
 
-% plot the BestCosts curve
-%figure();
-%plot(resABC.BestCosts, 'LineWidth', 2);
-%xlabel('Iteration');
-%ylabel('Best Cost');
+    resABC = ABC(Qparams, params, ABCparams);
 
-% plot the solution
-%[ABC_G, ABCpred] = MST(resABC.Position, c, R);
-%nodesABC = vertcat(resABC.Position, c);
-%plot_solution(nodesABC, ABCpred);
+    % plot the BestCosts curve
+    figure();
+    plot(resABC.BestCosts, 'LineWidth', 2);
+    xlabel('Iteration');
+    ylabel('Best Cost');
 
-% plot lifetime of each node
-%connected = ~isnan(ABCpred); % a logical array of connected sensors
-%[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-%    resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
-%    Qparams.cov_temp_d, params.K_temp);
-%temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
-%Qparams.Xa = resABC.Position;
-%Qparams.Ta = fah2cel(temp_mean_ad);
+    % plot the solution
+    [ABC_G, ABCpred] = MST(resABC.Position, c, R);
+    nodesABC = vertcat(resABC.Position, c);
+    plot_solution(nodesABC, ABCpred);
 
-% calculate the maintenance cost of connected sensors
-%M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
-%    params.logging);
-%bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-%    M.cirlife, 'lifetime of nodes from ABC');
+    % plot lifetime of each node
+    connected = ~isnan(ABCpred); % a logical array of connected sensors
+    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+        resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+        Qparams.cov_temp_d, params.K_temp);
+    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+    Qparams.Xa = resABC.Position;
+    Qparams.Ta = fah2cel(temp_mean_ad);
+
+    % calculate the maintenance cost of connected sensors
+    M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
+        params.logging);
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+        M.cirlife, 'lifetime of nodes from ABC');
+end
 
 %% plot functions
 function bubbleplot(lat, lon, title)
