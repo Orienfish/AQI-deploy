@@ -16,7 +16,7 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %   out.cirlife: list of circuit lifetime in days
 
 % settings for sensor workloads
-Pto = 0.52;    % 520mW
+Pto = 0.32;       % 320mW
 Btx = 2500;       % 20kbps = 2500B/s
 Brx = 2500;
 Ltx = 1e3;        % 1kB
@@ -24,8 +24,8 @@ Lrx = 1e3;
 Prx = 0.1;        % 100mW
 Psen = 0.2;       % 200mW
 tsen = 0.3;       % 300ms
-Pslp = 52.2*1e-3; % 52.2mW
 T = 10;           % 10s
+f = 300e6;        % 300MHz
 
 % settings for battery
 cap_bat = 2000;   % initial battery capacity in mAh
@@ -54,7 +54,7 @@ for i = 1:size(Xa, 1)
         
         % estimate power in W
         avgPwr = avgPower(txDist_m, Btx, Ltx, Pto, Brx, child_cnt * Lrx, Prx, ...
-            Psen, tsen, Pslp, T);
+            Psen, tsen, T, V, f);
 
         % estimate battery lifetime in days
         I_mA = avgPwr * 1000 / V; % convert from W to mW then calculate average current draw

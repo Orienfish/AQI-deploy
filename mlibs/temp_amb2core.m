@@ -8,12 +8,12 @@ function [Tcore] = temp_amb2core(Tamb, pwr, Tcore_last)
 % Return:
 %   Tcore: core processor temperature in Celsius
 % required constants
-m_A = 1.41558165;
+m_A = 0.0283;
 m_B = 0.98;
-m_C = 4.43815458;
-m_D = 1.7971150984226512;
+m_C = 0.0888;
+m_D = 0.0359;
 
-Tcore = (m_A * (1-m_B) * Tamb + m_B * Tcore_last + m_C * (1-m_B) * pwr + m_D * (1-m_B));
-fprintf("%f\n", Tcore);
+Tcore = m_A * Tamb + m_B * Tcore_last + m_C * pwr + m_D;
+% fprintf("%f\n", Tcore);
 end
 

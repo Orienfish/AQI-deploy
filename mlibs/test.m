@@ -1,6 +1,7 @@
 % Test every functions
-close all;
+clc;
 clear;
+close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test battery lifetime function, plot out the lifetime at various temp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,16 +20,21 @@ ylim([17 18.5]);
 % test ambient temperature to core temperature conversion function
 % plot out the core temperature at various ambient temperature
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-n_amb2core = 400;
-% Tamb = linspace(0, 40, n_amb2core);
-Tamb = 20;
-Tcore = zeros(1, n_amb2core);
-Tcore(1) = Tamb;
-for i = 2:n_amb2core
-    Tcore(i) = temp_amb2core(Tamb, 1.0, Tcore(i-1));
+n_amb2core = 5;
+iter = 400;
+Tamb = linspace(0, 40, n_amb2core);
+Tcore = zeros(n_amb2core, iter);
+for i = 1:n_amb2core
+    Tcore(i, 1) = Tamb(i);
+    for j = 2:iter
+        Tcore(i, j) = temp_amb2core(Tamb(i), 1.0, Tcore(i, j-1));
+    end
 end
 figure(2);
-plot(Tcore);
+for i = 1:n_amb2core
+    plot(Tcore(i, :));
+    hold on;
+end
 title('Core temperature under various ambient temperature');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,39 +62,47 @@ title('Core temperature under various ambient temperature');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test transmission power consumption under different distance
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Pto = 0.52;       % 520mW
-%n_dist = 41;
-%dist = linspace(0, 10, n_dist);
-%Ptx = zeros(1, n_dist);
-%for i = 1:n_dist
-%    Ptx(i) = txPower(dist(i), Pto);
-%end
-%figure(4);
-%plot(dist, Ptx);
-%title('Average transmission power under various distance');
+params.Pto = 0.32;       % 320mW
+n_dist = 41;
+dist = linspace(0, 10, n_dist);
+Ptx = zeros(1, n_dist);
+for i = 1:n_dist
+    Ptx(i) = txPower(dist(i), params.Pto);
+end
+figure(4);
+plot(dist, Ptx);
+title('Average transmission power under various distance');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test average power consumption and tddb lifetime under different distance
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Btx = 2500;       % 20kbps = 2500B/s
-%Brx = 2500;
-%Ltx = 1e3;        % 1kB
-%Lrx = 1e3;
-%Prx = 0.1;        % 100mW
-%Psen = 0.2;       % 200mW
-%tsen = 0.3;       % 300ms
-%Pslp = 52.2*1e-3; % 52.2mW
-%T = 10;           % 10s
-%avgPwr = zeros(1, n_dist);
+params.Btx = 2500;       % 20kbps = 2500B/s
+params.Brx = 2500;
+params.Ltx = 1e3;        % 1kB
+params.Lrx = 1e3;
+params.Prx = 0.1;        % 100mW
+params.Psen = 0.2;       % 200mW
+params.tsen = 0.3;       % 300ms
+params.T = 10;           % 10s
+params.Vdd = 3.3;          % 3.3v
+params.f = 300e6;        % 300MHz
+Tamb = linspace(0, 40, n_amb2core);
+avgPwr = zeros(n_amb2core, n_dist);
 %MTTF_dist = zeros(1, n_dist);
-%for i = 1:n_dist
-%    avgPwr(i) = avgPower(dist(i), Btx, Ltx, Pto, Brx, Lrx, Prx, ...
-%        Psen, tsen, Pslp, T);
-%    MTTF_dist(i) = mttf_tddb(1.1, 25, avgPwr(i));
-%end
-%figure(5);
-%plot(dist, avgPwr);
-%title('Average total power under various distance');
-%figure(5);
+for k = 1:n_amb2core
+    for i = 1:n_dist
+        params.dtx = dist(i);
+        [stbPwr, stbTc] = stbPower(params, Tamb(k));
+        avgPwr(k, i) = stbPwr;
+    %    MTTF_dist(i) = mttf_tddb(1.1, 25, avgPwr(i));
+    end
+end
+figure(5);
+for k = 1:n_amb2core
+    plot(dist, avgPwr(k, :));
+    hold on;
+end
+title('Average total power under various distance ambient temperature');
+%figure(6);
 %plot(dist, MTTF_dist);
 %title('Average tddb lifetime under various distance');
