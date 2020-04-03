@@ -124,6 +124,7 @@ Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 % set parameters
 params.m_A = m_A;                       % number of sensors to deploy
 params.Cm = Cm;                         % maintenance cost budget
+params.Cm = params.Cm - 0.5;            % need some margin
 params.K = K_pm2_5;                     % the fitted RBF kernel function
 params.K_temp = K_temp;                 % the fitted RBF kernel function 
                                         % for temperature
@@ -157,20 +158,33 @@ PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
 PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
 PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
 
-params.Cm = params.Cm - 0.5;            % need some margin
-
-%resPSO = PSO(Qparams, params, PSOparams);
+resPSO = PSO(Qparams, params, PSOparams);
 
 % plot the BestCosts curve
-%figure();
-%plot(resPSO.BestCosts, 'LineWidth', 2);
-%xlabel('Iteration');
-%ylabel('Best Cost');
+figure();
+plot(resPSO.BestCosts, 'LineWidth', 2);
+xlabel('Iteration');
+ylabel('Best Cost');
 
 % plot the solution
-%[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
-%nodesPSO = vertcat(resPSO.Position, c);
-%plot_solution(nodesPSO, PSOpred);
+[PSO_G, PSOpred] = MST(resPSO.Position, c, R);
+nodesPSO = vertcat(resPSO.Position, c);
+plot_solution(nodesPSO, PSOpred);
+
+% plot lifetime of each node
+connected = ~isnan(PSOpred); % a logical array of connected sensors
+[temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+    resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
+    Qparams.cov_temp_d, params.K_temp);
+temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
+Qparams.Xa = resPSO.Position;
+Qparams.Ta = fah2cel(temp_mean_ad);
+
+% calculate the maintenance cost of connected sensors
+M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
+    params.logging);
+bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
+    M.cirlife, 'lifetime of nodes from PSO');
 
 
 %% call ABC
@@ -180,7 +194,7 @@ ABCparams.nVar = m_A;                   % number of unknown decision variables
 ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
 % parameters of ABC
 ABCparams.maxIter = 100;                % maximum number of iterations
-ABCparams.nPop = 10;                    % populaton size
+ABCparams.nPop = 50;                    % populaton size
 ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
 ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                         % Abandonment Limit Parameter (Trial Limit)
@@ -212,7 +226,7 @@ Qparams.Ta = fah2cel(temp_mean_ad);
 M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
     params.logging);
 bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-    M.cirlife, 'lifetime of nodes');
+    M.cirlife, 'lifetime of nodes from ABC');
 
 %% plot functions
 function bubbleplot(lat, lon, title)
