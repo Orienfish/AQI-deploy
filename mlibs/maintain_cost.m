@@ -31,7 +31,7 @@ params.Vdd = 3.3;        % 3.3v supply voltage
 % settings for battery
 cap_bat = 20000;   % initial battery capacity in mAh
 dt_bat_h = 1;     % time resolution of battery in hours
-c_bat = 1;        % cost to replace battery
+c_bat = 2;        % cost to replace battery
 
 % setting for circuit
 c_node = 100;     % cost to replace node
@@ -73,12 +73,12 @@ for i = 1:size(Xa, 1)
         out.batlife(i) = batlife_day;
         out.cirlife(i) = cirlife_day;
 
-        %if logging
-        %    fprintf('  node %d amb temp: %f avg pwr: %f core temp: %f\n', ...
-        %        i, Ta(i), stbPwr, stbTc);
-        %    fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
-        %        batlife_day, cirlife_day, nodeC);
-        %end
+        if logging
+            fprintf('  node %d amb temp: %f avg pwr: %f core temp: %f\n', ...
+                i, Ta(i), stbPwr, stbTc);
+            fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
+                batlife_day, cirlife_day, nodeC);
+        end
     end
 end
 

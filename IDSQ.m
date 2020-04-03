@@ -90,13 +90,13 @@ for i = 1:params.m_A
                 cov_Xa_cur, params.K);
             curF = real(curF); % take the real part
             curM = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
-                commMST, predMST, params.logging);
-            curRes = IDSQparams.alpha * (curF - lastF) + ...
+                commMST, predMST, false);
+            curRes = IDSQparams.alpha * (curF - lastF) - ...
                 (1 - IDSQparams.alpha) * (curM.C - lastM);
             
             if params.logging
-                fprintf('node: %d senQ: %f main cost: %f res: %f\n', ...
-                    j, curF, curM.C, curRes);
+                fprintf('node: %d senQ gain: %f main cost gain: %f res: %f\n', ...
+                    j, curF - lastF, curM.C - lastM, curRes);
             end
             
             % compare and update
@@ -118,9 +118,8 @@ for i = 1:params.m_A
         lastF = maxF;
         lastM = maxM;
         if params.logging
-            fprintf('The selection in round %d is %d: [%f %f]\n', ...
-                i, maxRes_idx, Qparams.Xv(maxRes_idx, 1), ...
-                Qparams.Xv(maxRes_idx, 2));
+            fprintf('The selection in round %d is %d, senQ: %f, main cost: %f\n', ...
+                i, maxRes_idx, lastF, lastM);
         end
         
         % update the valid indexes
