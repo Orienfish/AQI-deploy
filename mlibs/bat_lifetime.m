@@ -31,7 +31,7 @@ y0 = y0 * CF;
 i0 = y0 * c;
 j0 = y0 * (1 - c);
 k = A * exp(-Ea / (R * (Tc + 273.15))); % note the temperature here is in Kelvin!
-%fprintf("%f, %f\n", i0, k);
+fprintf("%f, %f\n", i0, k);
 
 % iteratively compute battery lifetime
 t0 = 0.0;

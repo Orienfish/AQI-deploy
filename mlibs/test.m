@@ -40,24 +40,16 @@ title('Core temperature under various ambient temperature');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test MTTF_TDDB under various temperature and power
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%n_mttftemp = 41;
-%Tamb = linspace(0, 40, n_mttftemp);
-%n_pwr = 4;
-%pwr = linspace(1, 4, n_pwr);
-%MTTF = zeros(n_mttftemp, n_pwr);
-%for i = 1:n_mttftemp
-%    for j = 1:n_pwr
-%        MTTF(i, j) = mttf_tddb(1.1, Tamb(i), pwr(j));
-%    end
-%end
-%figure(3);
-%for j = 1:n_pwr
-%    plot(Tamb, MTTF(:, j));
-%    hold on;
-%end
-%hold off;
-%legend('pwr=1W', 'pwr=2W', 'pwr=3W', 'pwr=4W');
-%title('MTTF of TDDB under various ambient temperature');
+n_mttftemp = 41;
+Tc = linspace(0, 100, n_mttftemp); % core temperature in Celsius
+n_pwr = 4;
+MTTF = zeros(1, n_mttftemp);
+for i = 1:n_mttftemp
+    MTTF(i) = mttf_tddb(Tc(i) + 273.15); % convert to Kelvin
+end
+figure(3);
+plot(Tc, MTTF);
+title('MTTF of TDDB under various core temperature');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test transmission power consumption under different distance
@@ -86,23 +78,27 @@ params.tsen = 0.3;       % 300ms
 params.T = 10;           % 10s
 params.Vdd = 3.3;          % 3.3v
 params.f = 300e6;        % 300MHz
-Tamb = linspace(0, 40, n_amb2core);
-avgPwr = zeros(n_amb2core, n_dist);
-%MTTF_dist = zeros(1, n_dist);
-for k = 1:n_amb2core
+n_amb = 5;
+Tamb = linspace(0, 40, n_amb);
+avgPwr = zeros(n_amb, n_dist);
+MTTF_dist = zeros(n_amb, n_dist);
+for k = 1:n_amb
     for i = 1:n_dist
         params.dtx = dist(i);
         [stbPwr, stbTc] = stbPower(params, Tamb(k));
         avgPwr(k, i) = stbPwr;
-    %    MTTF_dist(i) = mttf_tddb(1.1, 25, avgPwr(i));
+        MTTF_dist(k, i) = mttf_tddb(stbTc);
     end
 end
 figure(5);
-for k = 1:n_amb2core
+for k = 1:n_amb
     plot(dist, avgPwr(k, :));
     hold on;
 end
-title('Average total power under various distance ambient temperature');
-%figure(6);
-%plot(dist, MTTF_dist);
-%title('Average tddb lifetime under various distance');
+title('Average total power under various distance and ambient temperature');
+figure(6);
+for k = 1:n_amb
+    plot(dist, MTTF_dist(k, :));
+    hold on;
+end
+title('Average tddb lifetime under various distance and ambient temperature');

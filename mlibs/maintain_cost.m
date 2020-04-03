@@ -16,25 +16,24 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %   out.cirlife: list of circuit lifetime in days
 
 % settings for sensor workloads
-Pto = 0.32;       % 320mW
-Btx = 2500;       % 20kbps = 2500B/s
-Brx = 2500;
-Ltx = 1e3;        % 1kB
-Lrx = 1e3;
-Prx = 0.1;        % 100mW
-Psen = 0.2;       % 200mW
-tsen = 0.3;       % 300ms
-T = 10;           % 10s
-f = 300e6;        % 300MHz
+params.Pto = 0.32;       % 320mW transmission power baseline
+params.Btx = 2500;       % 20kbps = 2500B/s bandwidth
+params.Brx = 2500;
+params.Ltx = 1e3;        % 1kB packet length
+params.Lrx = 1e3;           
+params.Prx = 0.1;        % 100mW receiving power
+params.Psen = 0.2;       % 200mW senisng power
+params.tsen = 0.3;       % 300ms sensing time
+params.T = 10;           % 10s sampling frequency
+params.f = 300e6;        % 300MHz clock frequency
+params.Vdd = 3.3;        % 3.3v supply voltage
 
 % settings for battery
 cap_bat = 2000;   % initial battery capacity in mAh
 dt_bat_h = 1;     % time resolution of battery in hours
-V = 3.3;          % supply voltage
 c_bat = 1;        % cost to replace battery
 
 % setting for circuit
-V_gs = 1.1;       % gate voltage
 c_node = 100;     % cost to replace node
 C = 0;            % total maintenance cost
 
@@ -45,24 +44,25 @@ out.cirlife = zeros(size(Xa, 1), 1);
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
     if conn_idx(i) % only process those nodes that are connected
-        txDist_km = commMST(predMST(i), i); % get the unique non-nan
-        txDist_m = txDist_km / 1000;  % convert to meters
+        txDist_km = commMST(predMST(i), i); % get the distance to predecessor
+        % txDist_m = txDist_km / 1000;  % convert to meters
         if isinf(txDist_km)
             error('Inf commMST!'); % security check
         end
         child_cnt = sum(predMST == i); % get child cnt of node i
+        params.dtx = txDist_km;
+        params.Lrx = params.Lrx * child_cnt;
         
         % estimate power in W
-        avgPwr = avgPower(txDist_m, Btx, Ltx, Pto, Brx, child_cnt * Lrx, Prx, ...
-            Psen, tsen, T, V, f);
+        [stbPwr, stbTc] = stbPower(params, Ta(i));
 
         % estimate battery lifetime in days
-        I_mA = avgPwr * 1000 / V; % convert from W to mW then calculate average current draw
+        I_mA = stbPwr * 1000 / V; % convert from W to mW then calculate average current draw
         batlife_h = bat_lifetime(cap_bat, Ta(i), I_mA, dt_bat_h);
         batlife_day = batlife_h / 24;
 
         % estimate circuit lifetime in days
-        cirlife_year = mttf_tddb(V_gs, Ta(i), avgPwr);
+        cirlife_year = mttf_tddb(stbTc);
         cirlife_day = cirlife_year * 365;
 
         % update total maintenance cost

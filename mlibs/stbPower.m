@@ -28,11 +28,13 @@ while 1
         break
     end
     Tc_old = Tc_new;
-    fprintf('it: %d Tc_new: %f Tc_old: %f, curPwr: %f\n', iter, ...
-       Tc_new, Tc_old, curPwr);
+    % fprintf('it: %d Tc_new: %f Tc_old: %f, curPwr: %f\n', iter, ...
+    %   Tc_new, Tc_old, curPwr);
     iter = iter + 1;
 end
 stbPwr = curPwr;
 stbTc = Tc_old + 273.15; % convert to Kelvin
+fprintf('stabilized pwr: %f stabilized core temperature in Celsius: %f\n', ...
+    stbPwr, Tc_old);
 end
 
