@@ -47,6 +47,7 @@ else
     % now greedily augment to satisfy quota
     selectednodes = sfo_pspiel_augment(F,V,selectednodes,Q,dists);
     
+    disp(selectednodes);
     % solve Steiner tree problem to connect selectednodes
     [totalCost,selectededges,supportnodes] = sfo_pspiel_get_cost(selectednodes,D,dists);
     
@@ -96,9 +97,9 @@ end
 
 for i = 1:length(pd);
     % compute greedy subsets and modular approximation per cluster
-    ni = length(pd{i}); %number of clusters
+    ni = length(pd{i}); %number of nodes in this cluster
         
-    if pd{i}(1) ~= Vroot || length(pd{i})>1
+    if pd{i}(1) ~= Vroot || length(pd{i})>=1
         [gs{i},scores] = sfo_greedy_lazy(F,pd{i},ni);
     else
         % in case we have a root, that will give value 0 and greedy will

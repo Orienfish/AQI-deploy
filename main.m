@@ -22,9 +22,10 @@ interval = 60 * 10;                % 10 mins = 600 secs
 R = 10;                            % communication range of sensors in km
 
 % boolean variables deciding whether to run each algorithm
-runIDSQ = true;
-runPSO = true;
-runABC = true;
+run.IDSQ = false;
+run.pSPIEL = true;
+run.PSO = false;
+run.ABC = false;
 
 
 %% pre-process
@@ -67,7 +68,7 @@ for i = 1:n_latV
     end
 end
 fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
-bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
+%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
 % pm2_5
@@ -109,8 +110,8 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% get the estimated mean and cov at V
 [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
-bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
 %temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
@@ -128,6 +129,7 @@ Qparams.mean_temp_d = mean_temp;        % mean temperature at D
 Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 
 % set parameters
+params.n_V = n_V;                       % number of reference locations
 params.m_A = m_A;                       % number of sensors to deploy
 params.Cm = Cm;                         % maintenance cost budget
 % params.Cm = params.Cm - 0.5;            % need some margin
@@ -144,7 +146,7 @@ params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
 params.penalty = 100;                   % penalty for non-connected nodes
 
 %% call the greedy heuristic IDSQ
-if runIDSQ
+if run.IDSQ
     fprintf('Calling IDSQ...\n');
     IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
     resIDSQ = IDSQ(Qparams, params, IDSQparams);
@@ -152,8 +154,13 @@ if runIDSQ
     fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
 end
 
+%% call pSPIEL
+if run.pSPIEL
+    res = pSPIEL(Qparams, params);
+end
+
 %% call PSO
-if runPSO
+if run.PSO
     fprintf('Calling PSO...\n');
     % problem definition
     PSOparams.nVar = m_A;                   % number of unknown decision variables
@@ -199,7 +206,7 @@ if runPSO
 end
 
 %% call ABC
-if runABC
+if run.ABC
     fprintf('Calling ABC...\n');
     % problem definition
     ABCparams.nVar = m_A;                   % number of unknown decision variables

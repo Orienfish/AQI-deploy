@@ -7,6 +7,7 @@ function [out] = costFunction(Qparams, params)
 %   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
+%
 %   params.m_A: number of sensors to deploy
 %   params.Cm: maintenance cost budget
 %   params.K: the fitted RBF kernel function

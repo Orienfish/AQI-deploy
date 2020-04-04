@@ -20,7 +20,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
 %   params.bound: bound for the area
-%   params.PSOparams.weights: 1x3 vectors for the PSOparams.weights
+%   params.weights: 1x3 vectors for the weights
 %   params.penalty: penalty for non-connected nodes
 %   params.logging: logging flag
 %

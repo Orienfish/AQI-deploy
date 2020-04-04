@@ -71,7 +71,7 @@ while 1
         end
     end
     argmax = find(deltas==max(deltas),1); % find best delta
-    if deltas(argmax)>TOL % nontrivial improvement by adding argmax
+    if abs(deltas(argmax))>TOL && deltas(argmax) > -inf % nontrivial improvement by adding argmax
         F = init(F,[sset V(argmax)]);
         sset = [sset,V(argmax)];
         if (useCB) %need to account for cost-benefit ratio
