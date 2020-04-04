@@ -14,7 +14,7 @@ diary 'log.txt';
 % V - reference locations
 % A - deployment plan
 m_A = 20;
-Cm = 8.0;
+Cm = 6.0;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -23,8 +23,8 @@ R = 10;                            % communication range of sensors in km
 
 % boolean variables deciding whether to run each algorithm
 runIDSQ = true;
-runPSO = false;
-runABC = false;
+runPSO = true;
+runABC = true;
 
 
 %% pre-process
@@ -66,7 +66,7 @@ for i = 1:n_latV
         V((i - 1) * n_lonV + j, :) = [V_lat(i) V_lon(j)];
     end
 end
-fprintf('Generate V with size %d x %d\n', num2str(n_latV), num2str(n_lonV));
+fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
@@ -137,7 +137,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = true;                 % logging flag
+params.logging = false;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
                                         % maintenance cost and penalty
@@ -153,7 +153,7 @@ if runIDSQ
 end
 
 %% call PSO
-if run PSO
+if runPSO
     fprintf('Calling PSO...\n');
     % problem definition
     PSOparams.nVar = m_A;                   % number of unknown decision variables
@@ -167,8 +167,10 @@ if run PSO
     PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
     PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
 
+    tic
     resPSO = PSO(Qparams, params, PSOparams);
-
+    toc
+    
     % plot the BestCosts curve
     figure();
     plot(resPSO.BestCosts, 'LineWidth', 2);
@@ -197,7 +199,7 @@ if run PSO
 end
 
 %% call ABC
-if run ABC
+if runABC
     fprintf('Calling ABC...\n');
     % problem definition
     ABCparams.nVar = m_A;                   % number of unknown decision variables
@@ -210,8 +212,10 @@ if run ABC
                                             % Abandonment Limit Parameter (Trial Limit)
     ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
 
+    tic
     resABC = ABC(Qparams, params, ABCparams);
-
+    toc
+    
     % plot the BestCosts curve
     figure();
     plot(resABC.BestCosts, 'LineWidth', 2);
@@ -265,7 +269,7 @@ function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
 end
 
 function plot_IDSQ(A, commMST, c)
-    figure();
+    figure;
     geoaxes('NextPlot','add');
     % generate list of nodes including the sink
     nodes = vertcat(A, c);
@@ -281,7 +285,7 @@ function plot_IDSQ(A, commMST, c)
 end
 
 function plot_solution(nodes, pred)
-    figure();
+    figure;
     geoaxes('NextPlot','add');
     % plot connections from commMST
     for i = 1:length(pred)

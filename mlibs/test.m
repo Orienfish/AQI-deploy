@@ -54,7 +54,7 @@ title('MTTF of TDDB under various core temperature');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test transmission power consumption under different distance
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params.Pto = 0.32;       % 320mW
+params.Pto = 0.52;       % 520mW
 n_dist = 41;
 dist = linspace(0, 10, n_dist);
 Ptx = zeros(1, n_dist);
@@ -112,8 +112,8 @@ for k = 1:n_amb
 end
 title('Average total power under various distance and ambient temperature');
 figure(6);
-for k = 1:n_amb
-    plot(dist, MTTF_dist(k, :));
+for k = 1:n_dist
+    plot(Tamb, MTTF_dist(:, k));
     hold on;
 end
 title('Average tddb lifetime under various distance and ambient temperature');

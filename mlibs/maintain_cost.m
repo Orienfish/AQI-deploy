@@ -16,7 +16,7 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 %   out.cirlife: list of circuit lifetime in days
 
 % settings for sensor workloads
-params.Pto = 0.32;       % 320mW transmission power baseline
+params.Pto = 0.52;       % 520mW transmission power baseline
 params.Btx = 2500;       % 20kbps = 2500B/s bandwidth
 params.Brx = 2500;
 params.Ltx = 1e3;        % 1kB packet length

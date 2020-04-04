@@ -169,7 +169,7 @@ for it = 1:PSOparams.maxIter
         
         % update personal best
         if particle(i).Cost < particle(i).Best.Cost
-            fprintf('update personal best\n');
+            %fprintf('update personal best\n');
             particle(i).Best.Position = particle(i).Position;
             particle(i).Best.Cost = particle(i).Cost;
             particle(i).Best.senQuality = particle(i).senQuality;
@@ -177,7 +177,7 @@ for it = 1:PSOparams.maxIter
             
             % update the global best
             if particle(i).Best.Cost < GlobalBest.Cost
-                fprintf('update global best\n');
+                %fprintf('update global best\n');
                 GlobalBest = particle(i).Best;
             end
         end

@@ -211,7 +211,7 @@ for it = 1:ABCparams.maxIter
     % Scout Bees
     for i = 1:ABCparams.nPop
         if C(i) >= ABCparams.L
-            fprintf('Abandon current source!\n');
+            % fprintf('Abandon current source!\n');
             % generate random solution
             pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
                 params.bound.latUpper, ABCparams.nVar, 1);
@@ -245,7 +245,7 @@ for it = 1:ABCparams.maxIter
     % Update Best Solution Ever Found
     for i = 1:ABCparams.nPop
         if pop(i).Cost < BestSol.Cost
-            fprintf('update best solution!\n');
+            %fprintf('update best solution!\n');
             BestSol = pop(i);
         end
     end

@@ -8,7 +8,7 @@ function [Ptx] = txPower(d, Pto)
 %   Ptx: average transmission power in W
 % required constants
 alpha = 3.5;
-beta = 1e-5;
+beta = 1e-4;
 
 Ptx = Pto + beta * (d ^ alpha);
 end
