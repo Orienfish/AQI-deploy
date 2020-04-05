@@ -24,8 +24,8 @@ R = 10;                            % communication range of sensors in km
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
+run.PSO = true;
+run.ABC = true;
 
 
 %% pre-process
@@ -132,7 +132,6 @@ Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 params.n_V = n_V;                       % number of reference locations
 params.m_A = m_A;                       % number of sensors to deploy
 params.Cm = Cm;                         % maintenance cost budget
-% params.Cm = params.Cm - 0.5;            % need some margin
 params.K = K_pm2_5;                     % the fitted RBF kernel function
 params.K_temp = K_temp;                 % the fitted RBF kernel function 
                                         % for temperature
@@ -156,7 +155,12 @@ end
 
 %% call pSPIEL
 if run.pSPIEL
-    res = pSPIEL(Qparams, params);
+    Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % to make the function monotonic
+    respSPIEL = pSPIEL(Qparams, params);
+    fprintf('pSPIEL: senQ: %f mainCost: %f\n', respSPIEL.F, respSPIEL.M.C);
+    nodespSPIEL = vertcat(respSPIEL.Position, c);
+    plot_solution(nodespSPIEL, respSPIEL.pred);
+    Qparams.cov_vd = pm2_5_cov_vd;             % reset
 end
 
 %% call PSO

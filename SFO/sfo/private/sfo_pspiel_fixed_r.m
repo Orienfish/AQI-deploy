@@ -193,7 +193,8 @@ end
 % the MAG, but less than Q on F. Here, we simply greedily add nodes until
 % the quota is met.
 function A = sfo_pspiel_augment(F,V,A,Q,dists)
-while 1
+maxIter = 1000;
+while maxIter > 0
     currentScore = F(A);
     if (currentScore>=Q) % satisfied quota
         break
@@ -209,6 +210,7 @@ while 1
     end
     [tmp best] = max(scores); % find best element
     A = [A Vc(best)];
+    maxIter = maxIter - 1;
 end
 
 
