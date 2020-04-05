@@ -24,8 +24,8 @@ R = 10;                            % communication range of sensors in km
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
+run.PSO = false;
+run.ABC = false;
 
 
 %% pre-process

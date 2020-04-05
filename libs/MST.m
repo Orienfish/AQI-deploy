@@ -19,13 +19,13 @@ G = zeros(n);           % init a symmetric matrix for connection graph
 % create the undirected graph and fill the matrix
 for p = 1:n
     for q = p+1:n
-    % check the distance between nodes
-    [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
-    if d1km < R
-        % update the undirected graph
-        G(p, q) = d1km;
-        G(q, p) = d1km;
-    end
+        % check the distance between nodes
+        [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
+        if d1km < R
+            % update the undirected graph
+            G(p, q) = d1km;
+            G(q, p) = d1km;
+        end
     end
 end
 

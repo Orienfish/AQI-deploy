@@ -75,10 +75,10 @@ for p = 1:params.n_V
 end
 D = D + ones(length(Qparams.Xv)); % cost of links + cost of nodes
 
-AP = sfo_pspiel(F,V,Q,D); % call pSPIEL
+[AP, E, res] = sfo_pspiel(F,V,Q,D); % call pSPIEL
 disp(AP);
 utility_pspiel = F(AP);
-[cost_pspiel edges_pspiel steiner_pspiel]= sfo_pspiel_get_cost(AP,D);
+[cost_pspiel edges_pspiel steiner_pspiel]= sfo_pspiel_get_cost(AP, D);
 disp(sprintf('pSPIEL: Utility = %f, Cost = %f.',utility_pspiel,cost_pspiel));
 
 % generate the node selection by pSPIEL
@@ -86,9 +86,28 @@ select = zeros(params.n_V, 1);
 select(AP) = 1;
 select = logical(select);
 Xa = Qparams.Xv(select, :);
-% Xa_remain = Qparams.Xv(~select, :);
+Xa_remain = Qparams.Xv(~select, :);
 cov_Xa = Qparams.cov_vd(select, select);
-% cov_Xa_remain = Qparams.cov_vd(~select, ~select);
+cov_Xa_remain = Qparams.cov_vd(~select, ~select);
+
+% reconstruct the connection graph
+G = zeros(size(Xa, 1)+1);
+nodes = vertcat(Xa, params.c);
+% create the undirected graph and fill the matrix, no communication range
+% limitation
+for p = 1:size(Xa, 1)+1
+    for q = p+1:size(Xa, 1)+1
+        % check the distance between nodes
+        [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
+        % update the undirected graph
+        G(p, q) = d1km;
+        G(q, p) = d1km;
+    end
+end
+
+% find the minimal spanning tree in graph, with the sink as the root
+[Tree, pred] = graphminspantree(sparse(G), size(Xa, 1)+1);
+connected = ~isnan(pred); % a logical array of connected sensors
 
 % predict the ambient temperature at Xv in Celsius
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD( ...
@@ -97,17 +116,8 @@ cov_Xa = Qparams.cov_vd(select, select);
 temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
-% find the MST that connects all selected nodes
-[G, pred] = MST(Xa, params.c, params.R);
-connected = ~isnan(pred); % a logical array of connected sensors
-
-% update Xa to connected nodes, only use in sensing quality function
-select_conn = logical(connected(1:size(Xa, 1))); % exclude the last element (sink)
-Xa_conn = Xa(select_conn, :);
-cov_Xa_conn = cov_Xa(select_conn, select_conn);
-
 % update the sensing quality and maintenance cost
-out.F = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_conn, cov_Xa_conn, params.K);
+out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);
 out.M = maintain_cost(Xa, Tv(select), connected, G, pred, false); % one-to-one match
 out.Position = Xa;
 out.pred = pred;
