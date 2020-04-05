@@ -20,6 +20,7 @@ function [out] = pSPIEL(Qparams, params)
 %   parmas.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
+%   params.penalty: penalty for non-connected nodes
 %   params.logging: logging flag
 %
 % Return:
@@ -68,9 +69,14 @@ for p = 1:params.n_V
     for q = p+1:params.n_V
     % check the distance to c
     [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
-    % update the undirected graph
-    D(p, q) = d1km;
-    D(q, p) = d1km;
+    if d1km > params.R
+        D(p, q) = d1km + params.penalty;
+        D(q, p) = d1km + params.penalty;
+    else
+        % update the undirected graph
+        D(p, q) = d1km;
+        D(q, p) = d1km;
+    end
     end
 end
 D = D + ones(length(Qparams.Xv)); % cost of links + cost of nodes
@@ -85,29 +91,37 @@ disp(sprintf('pSPIEL: Utility = %f, Cost = %f.',utility_pspiel,cost_pspiel));
 select = zeros(params.n_V, 1);
 select(AP) = 1;
 select = logical(select);
-Xa = Qparams.Xv(select, :);
-Xa_remain = Qparams.Xv(~select, :);
-cov_Xa = Qparams.cov_vd(select, select);
-cov_Xa_remain = Qparams.cov_vd(~select, ~select);
 
 % reconstruct the connection graph
-G = zeros(size(Xa, 1)+1);
-nodes = vertcat(Xa, params.c);
-% create the undirected graph and fill the matrix, no communication range
-% limitation
-for p = 1:size(Xa, 1)+1
-    for q = p+1:size(Xa, 1)+1
-        % check the distance between nodes
-        [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
-        % update the undirected graph
+G = zeros(params.n_V + 1); % init a symmetric matrix for connection graph
+
+% fill in D from E
+for i=1:size(E, 1)
+    p = E(i, 1);
+    q = E(i, 2);
+    [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
+    if d1km < params.R
         G(p, q) = d1km;
         G(q, p) = d1km;
     end
 end
 
-% find the minimal spanning tree in graph, with the sink as the root
-[Tree, pred] = graphminspantree(sparse(G), size(Xa, 1)+1);
-connected = ~isnan(pred); % a logical array of connected sensors
+% find all nodes adjacent to the sink
+for i=1:params.n_V
+    if select(i) == 1 % selected node
+        [d1km, d2km] = lldistkm(nodes(i, :), params.c);
+        if d1km < params.R
+            G(i, params.n_V+1) = d1km;
+            G(params.n_V+1, i) = d1km;
+        end
+    end
+end
+[Tree, pred] = graphminspantree(sparse(G), params.n_V+1);
+connected = logical(~isnan(pred(1:params.n_V))); % a logical array of connected sensors
+Xa = Qparams.Xv(connected, :);
+Xa_remain = Qparams.Xv(~connected, :);
+cov_Xa = Qparams.cov_vd(connected, connected);
+cov_Xa_remain = Qparams.cov_vd(~connected, ~connected);
 
 % predict the ambient temperature at Xv in Celsius
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD( ...
@@ -118,8 +132,8 @@ Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
 % update the sensing quality and maintenance cost
 out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);
-out.M = maintain_cost(Xa, Tv(select), connected, G, pred, false); % one-to-one match
-out.Position = Xa;
+out.M = maintain_cost(Qparams.Xv, Tv, connected, G, pred, false); % one-to-one match
+out.Position = Qparams.Xv;
 out.pred = pred;
 end
 

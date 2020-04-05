@@ -13,8 +13,8 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 20;
-Cm = 6.0;
+m_A = 14;
+Cm = 20.0;
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -24,8 +24,8 @@ R = 10;                            % communication range of sensors in km
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
+run.PSO = true;
+run.ABC = true;
 
 
 %% pre-process
@@ -171,7 +171,7 @@ if run.PSO
     PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
     % parameters of PSO
     PSOparams.maxIter = 100;                % maximum number of iterations
-    PSOparams.nPop = 50;                    % populaton size
+    PSOparams.nPop = 20;                    % populaton size
     PSOparams.chi = 0.729;                  % constriction factor
     PSOparams.w = PSOparams.chi;            % inertia coefficient
     PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
@@ -217,7 +217,7 @@ if run.ABC
     ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
     % parameters of ABC
     ABCparams.maxIter = 100;                % maximum number of iterations
-    ABCparams.nPop = 50;                    % populaton size
+    ABCparams.nPop = 20;                    % populaton size
     ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
     ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                             % Abandonment Limit Parameter (Trial Limit)

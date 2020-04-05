@@ -31,7 +31,7 @@ params.Vdd = 3.3;        % 3.3v supply voltage
 % settings for battery
 cap_bat = 20000;   % initial battery capacity in mAh
 dt_bat_h = 1;     % time resolution of battery in hours
-c_bat = 2;        % cost to replace battery
+c_bat = 10;        % cost to replace battery
 
 % setting for circuit
 c_node = 100;     % cost to replace node
