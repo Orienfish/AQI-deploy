@@ -17,11 +17,11 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 
 % settings for sensor workloads
 params.Pto = 0.52;       % 520mW transmission power baseline
-params.Btx = 2500;       % 20kbps = 2500B/s bandwidth
-params.Brx = 2500;
+params.Btx = 125;       % 1kbps = 125B/s bandwidth
+params.Brx = 125;
 params.Ltx = 1e3;        % 1kB packet length
 params.Lrx = 1e3;           
-params.Prx = 0.1;        % 100mW receiving power
+params.Prx = 0.2;        % 200mW receiving power
 params.Psen = 0.2;       % 200mW senisng power
 params.tsen = 0.3;       % 300ms sensing time
 params.T = 10;           % 10s sampling frequency
