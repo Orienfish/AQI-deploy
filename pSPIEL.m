@@ -29,6 +29,7 @@ function [out] = pSPIEL(Qparams, params)
 %   out.M: maintenance cost
 %   out.Position: select locations
 %   out.pred: the predecessors of each node
+%   out.connected: 0 or 1 indicating which node is selected
 addpath('./libs/');
 addpath('./mlibs/');
 addpath('./lldistkm/');
@@ -136,5 +137,6 @@ out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);
 out.M = maintain_cost(Qparams.Xv, Tv, connected, G, pred, false); % one-to-one match
 out.Position = Qparams.Xv;
 out.pred = pred;
+out.connected = connected;
 end
 
