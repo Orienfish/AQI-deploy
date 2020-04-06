@@ -13,20 +13,19 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 14;
-Cm = 20.0;
+m_A = 14;                          % number of sensors to place
+Q = 10.0;                          % sensing quality quota
+R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
-R = 10;                            % communication range of sensors in km
 
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
 run.PSO = true;
 run.ABC = true;
-
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -131,7 +130,7 @@ Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 % set parameters
 params.n_V = n_V;                       % number of reference locations
 params.m_A = m_A;                       % number of sensors to deploy
-params.Cm = Cm;                         % maintenance cost budget
+params.Q = Q;                           % sensing quality quota
 params.K = K_pm2_5;                     % the fitted RBF kernel function
 params.K_temp = K_temp;                 % the fitted RBF kernel function 
                                         % for temperature
@@ -140,7 +139,7 @@ params.R = R;                           % communication range of the sensors in 
 params.bound = bound;                   % bound for the area
 params.logging = false;                 % logging flag
 % parameters of the cost function
-params.weights = [0.5 0.4 0.1];         % weights for sensing quality,
+params.weights = [0.6 0.3 0.1];         % weights for sensing quality,
                                         % maintenance cost and penalty
 params.penalty = 100;                   % penalty for non-connected nodes
 

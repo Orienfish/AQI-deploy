@@ -16,6 +16,7 @@ function [out] = pSPIEL(Qparams, params)
 %
 %   params.n_V: number of reference locations
 %   params.m_A: number of sensors to deploy
+%   params.Q: sensing quality quota
 %   params.K: the fitted RBF kernel function
 %   parmas.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
@@ -50,7 +51,7 @@ F_var = sfo_fn_varred(Qparams.cov_vd,V_sigma);
 choose = 'mi';
 if strcmp(choose, 'mi')
     F = F_mi; 
-    Q = 10;
+    Q = params.Q;
 elseif strcmp(choose, 'ig')
     F = F_ig;
     Q = 0.8 * F(V);

@@ -8,8 +8,9 @@ function [out] = costFunction(Qparams, params)
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %
+%   params.n_V: number of reference locations
 %   params.m_A: number of sensors to deploy
-%   params.Cm: maintenance cost budget
+%   params.Q: sensing quality quota
 %   params.K: the fitted RBF kernel function
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
@@ -71,7 +72,7 @@ M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...
 P = params.penalty * (sum(~connected));
 
 % final cost
-cost = params.weights(1) * (-F) + params.weights(2) * max(M.C - params.Cm, 0) ... 
+cost = params.weights(1) * M.C + params.weights(2) * max(params.Q - F, 0) ... 
     + params.weights(3) * P;
 if params.logging
     fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M.C, P);

@@ -13,8 +13,9 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   Qparams.mean_temp_d: mean temperature at D
 %   Qparams.cov_temp_d: cov matrix of temperature at D
 %
+%   params.n_V: number of reference locations
 %   params.m_A: number of sensors to deploy
-%   params.Cm: maintenance cost budget
+%   params.Q: sensing quality quota
 %   params.K: the fitted RBF kernel function
 %   parmas.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
