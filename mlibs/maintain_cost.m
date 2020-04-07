@@ -17,7 +17,7 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 
 % settings for sensor workloads
 params.Pto = 0.52;       % 520mW transmission power baseline
-params.Btx = 125;       % 1kbps = 125B/s bandwidth
+params.Btx = 125;        % 1kbps = 125B/s bandwidth
 params.Brx = 125;
 params.Ltx = 1e3;        % 1kB packet length
 params.Lrx = 1e3;           
@@ -51,6 +51,7 @@ for i = 1:size(Xa, 1)
         end
         child_cnt = sum(predMST == i); % get child cnt of node i
         params.dtx = txDist_km;
+        params.Ltx = params.Ltx * child_cnt + params.Ltx;
         params.Lrx = params.Lrx * child_cnt;
         
         % estimate power in W
