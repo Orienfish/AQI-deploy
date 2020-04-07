@@ -13,7 +13,7 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 14;                          % number of sensors to place
+m_A = 16;                          % number of sensors to place
 Q = 10.0;                          % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
@@ -24,8 +24,8 @@ interval = 60 * 10;                % 10 mins = 600 secs
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
+run.PSO = false;
+run.ABC = false;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -116,7 +116,7 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
-%bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
 temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
 %[X, Y] = meshgrid(V_lon, V_lat);

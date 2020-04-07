@@ -17,10 +17,10 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 
 % settings for sensor workloads
 params.Pto = 0.52;       % 520mW transmission power baseline
-params.Btx = 125;        % 1kbps = 125B/s bandwidth
-params.Brx = 125;
-params.Ltx = 1e3;        % 1kB packet length
-params.Lrx = 1e3;           
+params.Btx = 1250;       % 10kbps = 1250B/s bandwidth
+params.Brx = 1250;
+params.Ltx_init = 1e3;   % 1kB packet length
+params.Lrx_init = 1e3;           
 params.Prx = 0.2;        % 200mW receiving power
 params.Psen = 0.2;       % 200mW senisng power
 params.tsen = 0.3;       % 300ms sensing time
@@ -51,8 +51,9 @@ for i = 1:size(Xa, 1)
         end
         child_cnt = sum(predMST == i); % get child cnt of node i
         params.dtx = txDist_km;
-        params.Ltx = params.Ltx * child_cnt + params.Ltx;
-        params.Lrx = params.Lrx * child_cnt;
+        params.Ltx = params.Ltx_init * (child_cnt + 1);
+        params.Lrx = params.Lrx_init * child_cnt;
+        % fprintf('child cnt: %d Ltx: %d Lrx: %d\n', child_cnt, params.Ltx, params.Lrx);
         
         % estimate power in W
         [stbPwr, stbTc] = stbPower(params, Ta(i));
@@ -63,8 +64,8 @@ for i = 1:size(Xa, 1)
         batlife_day = batlife_h / 24;
 
         % estimate circuit lifetime in days
-        %cirlife_year = mttf_tddb(stbTc);
-        %cirlife_day = cirlife_year * 365;
+        % cirlife_year = mttf_tddb(stbTc);
+        % cirlife_day = cirlife_year * 365;
         cirlife_day = mttf_tddb(stbTc);
         
         % update total maintenance cost

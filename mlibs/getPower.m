@@ -20,11 +20,11 @@ function [avgPwr] = getPower(params, Tc)
 % calculate avg. transmission power and time
 Ptx = txPower(params.dtx, params.Pto);
 ttx = params.Ltx / params.Btx;
-% fprintf('tx power: %f tx time: %f\n', Ptx, ttx);
+%fprintf('tx power: %f tx time: %f\n', Ptx, ttx);
 
 % calculate avg. receiving time
 trx = params.Lrx / params.Brx;
-% fprintf('rx power: %f rx time: %f\n', Prx, trx);
+%fprintf('rx power: %f rx time: %f\n', params.Prx, trx);
 
 % calculate avg. SoC power
 a = 1.5917e-11;
