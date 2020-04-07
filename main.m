@@ -23,9 +23,9 @@ interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
-run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
+run.pSPIEL = false;
+run.PSO = false;
+run.ABC = false;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -112,10 +112,19 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
 
-%temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
+[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
+temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
+temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
+% for plotting distribution
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
-
+temp_mean_vd_re = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
+%[X, Y] = meshgrid(V_lon, V_lat);
+%surf(X, Y, temp_mean_vd);
+figure;
+h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
+    temp_mean_vd_re, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
+    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
 %% setting parameters for algorithms
 % setting Quality parameters
 Qparams.Xv = V;                         % list of reference locations to 
