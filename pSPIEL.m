@@ -62,7 +62,7 @@ elseif strcmp(choose, 'var')
 else
     error('wrong criterion selection!');
 end
-fprintf("Choose %s, Quota: %f\n", choose, Q);
+%fprintf("Choose %s, Quota: %f\n", choose, Q);
 
 % create the undirected dist matrix
 D = zeros(params.n_V); % init a symmetric matrix for connection graph
@@ -84,7 +84,7 @@ end
 D = D + ones(length(Qparams.Xv)); % cost of links + cost of nodes
 
 [AP, E, res] = sfo_pspiel(F,V,Q,D); % call pSPIEL
-disp(AP);
+%disp(AP);
 utility_pspiel = F(AP);
 [cost_pspiel edges_pspiel steiner_pspiel]= sfo_pspiel_get_cost(AP, D);
 disp(sprintf('pSPIEL: Utility = %f, Cost = %f.',utility_pspiel,cost_pspiel));

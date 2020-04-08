@@ -47,7 +47,7 @@ else
     % now greedily augment to satisfy quota
     selectednodes = sfo_pspiel_augment(F,V,selectednodes,Q,dists);
     
-    disp(selectednodes);
+    %disp(selectednodes);
     % solve Steiner tree problem to connect selectednodes
     [totalCost,selectededges,supportnodes] = sfo_pspiel_get_cost(selectednodes,D,dists);
     

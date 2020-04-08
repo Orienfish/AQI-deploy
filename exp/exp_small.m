@@ -1,6 +1,9 @@
-function exp_small(target, run)
+function exp_small(target, run, Q)
 %% Run simulation on the small dataset for the given target
-
+%
+% Args:
+%   run: experimental parameters setting
+%   Q: pre-determined sensing quality quota
 warning('off','all')
 addpath('../libs/');
 addpath('../mlibs/');
@@ -13,7 +16,7 @@ addpath('../');
 % V - reference locations
 % A - deployment plan
 m_A = 16;                          % number of sensors to place
-Q = 10.0;                          % sensing quality quota
+% Q = 10.0;                        % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
@@ -170,13 +173,13 @@ K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% get the estimated mean and cov at V for plotting
-[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
-    cov_mat_target, K_target);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
-    'variance of target at V given D');
+%[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
+%    cov_mat_target, K_target);
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
+%    'variance of target at V given D');
 
 %[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
 %    cov_mat_temp, K_temp);
@@ -243,23 +246,23 @@ if run.pSPIEL
         fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f\n', ...
             sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C);
         nodespSPIEL = vertcat(respSPIEL.Position, c);
-        plot_solution(nodespSPIEL, respSPIEL.pred);
-        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-            respSPIEL.M.batlife, '');
-        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-            respSPIEL.M.cirlife, '');
+        %plot_solution(nodespSPIEL, respSPIEL.pred);
+        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+        %    respSPIEL.M.batlife, '');
+        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+        %    respSPIEL.M.cirlife, '');
         
         % logging
         bat_str = '';
         cir_str = '';
-        for idx = 1:n_V
+        for idx = 1:params.n_V
             bat_str = sprintf('%s%.4f,', bat_str, respSPIEL.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, respSPIEL.M.cirlife(idx));
         end
         str = sprintf('%d %f %f', sum(respSPIEL.connected), respSPIEL.F, ...
             respSPIEL.M.C);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
-        filename = sprintf('pSPIEL_%s.txt', target);
+        filename = sprintf('pSPIEL_%s_%d.txt', target, Q);
         log(filename, str);
     end
 end
@@ -272,8 +275,8 @@ if run.PSO
         PSOparams.nVar = m_A;                   % number of unknown decision variables
         PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of PSO
-        PSOparams.maxIter = 50;                % maximum number of iterations
-        PSOparams.nPop = 50;                    % populaton size
+        PSOparams.maxIter = 1; %50;                % maximum number of iterations
+        PSOparams.nPop = 1; %50;                    % populaton size
         PSOparams.chi = 0.729;                  % constriction factor
         PSOparams.w = PSOparams.chi;            % inertia coefficient
         PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
@@ -285,18 +288,18 @@ if run.PSO
         toc
 
         % plot the BestCosts curve
-        figure();
-        plot(resPSO.BestCosts, 'LineWidth', 2);
-        xlabel('Iteration');
-        ylabel('Best Cost');
+        %figure();
+        %plot(resPSO.BestCosts, 'LineWidth', 2);
+        %xlabel('Iteration');
+        %ylabel('Best Cost');
 
         % plot the solution
         [PSO_G, PSOpred] = MST(resPSO.Position, c, R);
         nodesPSO = vertcat(resPSO.Position, c);
-        plot_solution(nodesPSO, PSOpred);
+        %plot_solution(nodesPSO, PSOpred);
 
         % plot lifetime of each node
-        connected = ~isnan(PSOpred); % a logical array of connected sensors
+        connected = ~isnan(PSOpred(1:params.m_A)); % a logical array of connected sensors
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
@@ -311,12 +314,16 @@ if run.PSO
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
-        bat_str = num2str(M.batlife);
-        cir_str = num2str(M.cirlife);
-        str = sprintf('%d %f %f\n', sum(connected), resPSO.senQuality, ...
+        bat_str = '';
+        cir_str = '';
+        for idx = 1:params.m_A
+            bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
+            cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
+        end
+        str = sprintf('%d %f %f', sum(connected), resPSO.senQuality, ...
             resPSO.mainCost);
-        str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
-        filename = sprintf('PSO_%s.txt', target);
+        str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
+        filename = sprintf('PSO_%s_%d.txt', target, Q);
         log(filename, str);
     end
 end
@@ -329,8 +336,8 @@ if run.ABC
         ABCparams.nVar = m_A;                   % number of unknown decision variables
         ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of ABC
-        ABCparams.maxIter = 50;                % maximum number of iterations
-        ABCparams.nPop = 50;                    % populaton size
+        ABCparams.maxIter = 2;%50;                % maximum number of iterations
+        ABCparams.nPop = 2;%50;                    % populaton size
         ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
         ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                                 % Abandonment Limit Parameter (Trial Limit)
@@ -341,18 +348,18 @@ if run.ABC
         toc
 
         % plot the BestCosts curve
-        figure();
-        plot(resABC.BestCosts, 'LineWidth', 2);
-        xlabel('Iteration');
-        ylabel('Best Cost');
+        %figure();
+        %plot(resABC.BestCosts, 'LineWidth', 2);
+        %xlabel('Iteration');
+        %ylabel('Best Cost');
 
         % plot the solution
         [ABC_G, ABCpred] = MST(resABC.Position, c, R);
         nodesABC = vertcat(resABC.Position, c);
-        plot_solution(nodesABC, ABCpred);
+        %plot_solution(nodesABC, ABCpred);
 
         % plot lifetime of each node
-        connected = ~isnan(ABCpred); % a logical array of connected sensors
+        connected = ~isnan(ABCpred(1:params.m_A)); % a logical array of connected sensors
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
@@ -367,12 +374,16 @@ if run.ABC
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
-        bat_str = num2str(M.batlife);
-        cir_str = num2str(M.cirlife);
-        str = sprintf('%d %f %f\n', sum(connected), resABC.senQuality, ...
+        bat_str = '';
+        cir_str = '';
+        for idx = 1:params.m_A
+            bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
+            cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
+        end
+        str = sprintf('%d %f %f', sum(connected), resABC.senQuality, ...
             resABC.mainCost);
-        str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
-        filename = sprintf('ABC_%s.txt', target);
+        str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
+        filename = sprintf('ABC_%s_%d.txt', target, Q);
         log(filename, str);
     end
 end
@@ -433,6 +444,6 @@ end
 %% log function
 function log(filename, str)
     fileID = fopen(filename, 'a+');
-    fprintf(fileID, '%s\n', str);
+    fprintf(fileID, '%s', str);
     fclose(fileID);
 end

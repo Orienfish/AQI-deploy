@@ -6,13 +6,18 @@ close all;
 % settings
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
-run.iter = 2;
+run.PSO = true;
+run.ABC = true;
+run.iter = 10;
 
 % run experiments on small dataset
-exp_small('pm2_5', run);
-%exp_small('pm1', run);
-%exp_small('pm10', run);
-exp_small('humid', run);
+exp_small('pm2_5', run, 10.0);
+exp_small('pm1', run, 10.0);
+exp_small('pm10', run, 10.0);
+exp_small('humid', run, 10.0);
+exp_small('pm2_5', run, 7.0);
+exp_small('pm2_5', run, 8.0);
+exp_small('pm2_5', run, 9.0);
+exp_small('pm2_5', run, 11.0);
+exp_small('pm2_5', run, 12.0);
 %exp_small('temp', run);
