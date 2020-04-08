@@ -7,6 +7,7 @@ addpath('./libs/');
 addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
+addpath('./alg/');
 diary 'log.txt';
 
 %% settings

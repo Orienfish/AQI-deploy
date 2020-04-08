@@ -1,11 +1,12 @@
 function [out] = exp_small(target, run)
-%% Run simulation on the small region for the given target
+%% Run simulation on the small dataset for the given target
 
 warning('off','all')
-addpath('./libs/');
-addpath('./mlibs/');
-addpath('./lldistkm/');
-addpath('./gp/');
+addpath('../libs/');
+addpath('../mlibs/');
+addpath('../lldistkm/');
+addpath('../gp/');
+addpath('../alg/');
 
 %% settings
 % D - pre-deployment
@@ -29,8 +30,8 @@ interval = 60 * 10;                % 10 mins = 600 secs
 %% pre-process
 fprintf('start pre-processing...\n');
 % get the mean, var and count of each type of data
-f_list = dir('./data/*Primary*.csv'); % use all primary data
-dataT_sav = './data/dataT.csv';
+f_list = dir('../data/*Primary*.csv'); % use all primary data
+dataT_sav = '../data/dataT.csv';
 tic
 if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
