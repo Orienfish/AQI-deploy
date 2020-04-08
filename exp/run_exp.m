@@ -2,6 +2,11 @@
 clc;
 clear;
 close all;
+addpath('../libs/');
+addpath('../mlibs/');
+addpath('../lldistkm/');
+addpath('../gp/');
+addpath('../SFO/sfo/');
 
 % settings
 run.IDSQ = false;

@@ -34,7 +34,7 @@ addpath('./libs/');
 addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
-addpath('./SFO/sfo');
+addpath('./SFO/sfo/');
 
 % the ground set for the submodular functions
 V_sigma = 1:params.n_V;
