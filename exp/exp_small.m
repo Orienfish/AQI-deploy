@@ -6,7 +6,7 @@ addpath('../libs/');
 addpath('../mlibs/');
 addpath('../lldistkm/');
 addpath('../gp/');
-addpath('../alg/');
+addpath('../');
 
 %% settings
 % D - pre-deployment
@@ -166,17 +166,17 @@ end
 
 %% fit the RBF kernel for certain data types
 fprintf('Fitting the RBF kernel...\n');
-K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, 'target');
+K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% get the estimated mean and cov at V for plotting
 [target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
     cov_mat_target, K_target);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of pm2.5 at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of pm2.5 at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of pm2.5 at V given D');
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
+bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
+bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
 bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
-    'variance of pm2.5 at V given D');
+    'variance of target at V given D');
 
 %[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
 %    cov_mat_temp, K_temp);
@@ -250,11 +250,15 @@ if run.pSPIEL
             respSPIEL.M.cirlife, '');
         
         % logging
-        bat_str = num2str(respSPIEL.M.batlife);
-        cir_str = num2str(respSPIEL.M.cirlife);
-        str = sprintf('%d %f %f\n', sum(respSPIEL.connected), respSPIEL.F, ...
+        bat_str = '';
+        cir_str = '';
+        for idx = 1:n_V
+            bat_str = sprintf('%s%.4f,', bat_str, respSPIEL.M.batlife(idx));
+            cir_str = sprintf('%s%.4f,', cir_str, respSPIEL.M.cirlife(idx));
+        end
+        str = sprintf('%d %f %f', sum(respSPIEL.connected), respSPIEL.F, ...
             respSPIEL.M.C);
-        str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
+        str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('pSPIEL_%s.txt', target);
         log(filename, str);
     end
@@ -429,6 +433,6 @@ end
 %% log function
 function log(filename, str)
     fileID = fopen(filename, 'a+');
-    fprintf('%s', str);
+    fprintf(fileID, '%s\n', str);
     fclose(fileID);
 end

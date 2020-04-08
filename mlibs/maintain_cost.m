@@ -17,8 +17,8 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 
 % settings for sensor workloads
 params.Pto = 0.52;       % 520mW transmission power baseline
-params.Btx = 1250;       % 10kbps = 1250B/s bandwidth
-params.Brx = 1250;
+params.Btx = 250;       % 2kbps = 250B/s bandwidth
+params.Brx = 250;
 params.Ltx_init = 1e3;   % 1kB packet length
 params.Lrx_init = 1e3;           
 params.Prx = 0.2;        % 200mW receiving power
