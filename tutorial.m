@@ -24,8 +24,8 @@ interval = 60 * 10;                % 10 mins = 600 secs
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
+run.PSO = true;
+run.ABC = true;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -67,7 +67,7 @@ for i = 1:n_latV
     end
 end
 fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
-%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
+%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 'order');
 
 % obtain mean vector and covariance matrix and correlation matrix of certain data types
 % pm2_5
@@ -109,22 +109,28 @@ K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
 %% get the estimated mean and cov at V
 [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
-%bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, var_pm2_5, 'pm2.5 of D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, diag(pm2_5_cov_vd), 'pm2.5 V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, 'mean of pm2.5 at D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), var_pm2_5, 'variance of pm2.5 at D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, 'mean of pm2.5 at V given D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), diag(pm2_5_cov_vd), ...
+%    'variance of pm2.5 at V given D');
 
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
 temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, var_temp, 'temp of D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, diag(temp_cov_vd), 'temp V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
+%    'variance of temp at V given D');
+% plot heatmap of temperature
 temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-%[X, Y] = meshgrid(V_lon, V_lat);
-%surf(X, Y, temp_mean_vd);
 figure;
 h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
     temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
     'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+
 %% setting parameters for algorithms
 % setting Quality parameters
 Qparams.Xv = V;                         % list of reference locations to 
@@ -163,6 +169,7 @@ end
 
 %% call pSPIEL
 if run.pSPIEL
+    fprintf('Calling pSPIEL...\n');
     Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % to make the function monotonic
     tic
     respSPIEL = pSPIEL(Qparams, params);
@@ -172,7 +179,9 @@ if run.pSPIEL
     nodespSPIEL = vertcat(respSPIEL.Position, c);
     plot_solution(nodespSPIEL, respSPIEL.pred);
     bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-        respSPIEL.M.batlife, respSPIEL.M.cirlife, 'lifetime of nodes from pSPIEL');
+        respSPIEL.M.batlife, '');
+    bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+        respSPIEL.M.cirlife, '');
     %Qparams.cov_vd = pm2_5_cov_vd;             % reset
 end
 
@@ -218,8 +227,8 @@ if run.PSO
     % calculate the maintenance cost of connected sensors
     M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
         params.logging);
-    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-        M.cirlife, 'lifetime of nodes from PSO');
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
 end
 
 %% call ABC
@@ -263,8 +272,8 @@ if run.ABC
     % calculate the maintenance cost of connected sensors
     M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
         params.logging);
-    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, ...
-        M.cirlife, 'lifetime of nodes from ABC');
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+    bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
 end
 
 %% plot functions
@@ -272,23 +281,17 @@ function bubbleplot(lat, lon, title)
     % plot the locations
     figure('Position', [0 0 1000 800]);
     geobubble(lat, lon, 'Title', title);
+    ax = gca; % get current axes
+    ax.FontSize = 16;
     %geobasemap streets-light; % set base map style
 end
 
-function bubbleplot_wsize(lat, lon, mean, var, title)
+function bubbleplot_wsize(lat, lon, sizedata, title)
     % plot the locations
-    figure('Position', [0 0 2000 800]);
-    subplot(1, 2, 1);
-    geobubble(lat, lon, mean, 'Title', title);
-    subplot(1, 2, 2);
-    geobubble(lat, lon, var, 'Title', title);
-    %geobasemap streets-light; % set base map style
-end
-
-function bubbleplot_wcolor(lat, lon, sizedata, colordata, title)
-    % plot the locations
-    figure('Position', [0 0 1000 800]);
-    geobubble(lat, lon, sizedata, colordata, 'Title', title);
+    figure;
+    geobubble(lat, lon, sizedata, 'Title', title);
+    ax = gca; % get current axes
+    ax.FontSize = 16;
     %geobasemap streets-light; % set base map style
 end
 
@@ -305,7 +308,9 @@ function plot_IDSQ(A, commMST, c)
                     [nodes(i, 2) nodes(j, 2)], 'b-*', 'LineWidth', 2);
             end
         end
-    end   
+    end
+    ax = gca; % get current axes
+    ax.FontSize = 16;
 end
 
 function plot_solution(nodes, pred)
@@ -317,5 +322,7 @@ function plot_solution(nodes, pred)
             geoplot([nodes(i, 1) nodes(pred(i), 1)], ...
                 [nodes(i, 2) nodes(pred(i), 2)], 'b-*', 'LineWidth', 2);
         end
-    end   
+    end
+    ax = gca; % get current axes
+    ax.FontSize = 16;   
 end
