@@ -1,4 +1,4 @@
-function [out] = exp_small(target, run)
+function exp_small(target, run)
 %% Run simulation on the small dataset for the given target
 
 warning('off','all')
@@ -73,8 +73,8 @@ fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 % We need temperature data anyway
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
 var_temp = vertcat(dataT.temp_var(:)); % var
-cov_mat_temp_sav = './data/cov_mat_temp.csv';
-corr_mat_temp_sav = './data/corr_mat_temp.csv';
+cov_mat_temp_sav = '../data/cov_mat_temp.csv';
+corr_mat_temp_sav = '../data/corr_mat_temp.csv';
 tic
 if exist(cov_mat_temp_sav, 'file') && exist(corr_mat_temp_sav, 'file')
     cov_mat_temp = readmatrix(cov_mat_temp_sav);
@@ -91,8 +91,8 @@ toc
 if strcmp(target, 'pm2_5')
 mean_target = vertcat(dataT.pm2_5_avg(:)); % mean
 var_target = vertcat(dataT.pm2_5_var(:)); % var
-cov_mat_target_sav = './data/cov_mat_pm2_5.csv';
-corr_mat_target_sav = './data/corr_mat_pm2_5.csv';
+cov_mat_target_sav = '../data/cov_mat_pm2_5.csv';
+corr_mat_target_sav = '../data/corr_mat_pm2_5.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -116,8 +116,8 @@ end
 if strcmp(target, 'pm1')
 mean_target = vertcat(dataT.pm1_avg(:)); % mean
 var_target = vertcat(dataT.pm1_var(:)); % var
-cov_mat_target_sav = './data/cov_mat_pm1.csv';
-corr_mat_target_sav = './data/corr_mat_pm1.csv';
+cov_mat_target_sav = '../data/cov_mat_pm1.csv';
+corr_mat_target_sav = '../data/corr_mat_pm1.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -133,8 +133,8 @@ end
 if strcmp(target, 'pm10')
 mean_target = vertcat(dataT.pm10_avg(:)); % mean
 var_target = vertcat(dataT.pm10_var(:)); % var
-cov_mat_target_sav = './data/cov_mat_pm10.csv';
-corr_mat_target_sav = './data/corr_mat_pm10.csv';
+cov_mat_target_sav = '../data/cov_mat_pm10.csv';
+corr_mat_target_sav = '../data/corr_mat_pm10.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -150,8 +150,8 @@ end
 if strcmp(target, 'humid')
 mean_target = vertcat(dataT.humid_avg(:)); % mean
 var_target = vertcat(dataT.humid_var(:)); % var
-cov_mat_target_sav = './data/cov_mat_humid.csv';
-corr_mat_target_sav = './data/corr_mat_humid.csv';
+cov_mat_target_sav = '../data/cov_mat_humid.csv';
+corr_mat_target_sav = '../data/corr_mat_humid.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -169,17 +169,19 @@ fprintf('Fitting the RBF kernel...\n');
 K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, 'target');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
-%% get the estimated mean and cov at V
-[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, cov_mat_target, K_target);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, 'mean of pm2.5 at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_pm2_5, 'variance of pm2.5 at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, 'mean of pm2.5 at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(pm2_5_cov_vd), ...
+%% get the estimated mean and cov at V for plotting
+[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
+    cov_mat_target, K_target);
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of pm2.5 at D');
+bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of pm2.5 at D');
+bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of pm2.5 at V given D');
+bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
     'variance of pm2.5 at V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
-temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
-temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
+%[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
+%    cov_mat_temp, K_temp);
+%temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
+%temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
 %bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
@@ -197,10 +199,10 @@ temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % setting Quality parameters
 Qparams.Xv = V;                         % list of reference locations to 
                                         % predict, [lat lon]
-Qparams.cov_vd = target_cov_vd;          % cov matrix at Xv given pre-deployment D
+Qparams.cov_vd = gen_Sigma(V, V, K_target); % cov matrix at Xv given pre-deployment D
 Qparams.Xd = D;                         % list of predeployment locations
-Qparams.mean_d = mean_target;            % mean value at D
-Qparams.cov_d = cov_mat_target;          % cov matrix at D
+Qparams.mean_d = mean_target;           % mean value at D
+Qparams.cov_d = cov_mat_target;         % cov matrix at D
 Qparams.mean_temp_d = mean_temp;        % mean temperature at D
 Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 
@@ -208,7 +210,7 @@ Qparams.cov_temp_d = cov_mat_temp;      % cov matrix of temperature at D
 params.n_V = n_V;                       % number of reference locations
 params.m_A = m_A;                       % number of sensors to deploy
 params.Q = Q;                           % sensing quality quota
-params.K = K_target;                     % the fitted RBF kernel function
+params.K = K_target;                    % the fitted RBF kernel function
 params.K_temp = K_temp;                 % the fitted RBF kernel function 
                                         % for temperature
 params.c = c;                           % position of the sink in [lat lon]
@@ -235,7 +237,6 @@ end
 if run.pSPIEL
     for it = 1:run.iter
         fprintf('Calling pSPIEL...\n');
-        Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % to make the function monotonic
         tic
         respSPIEL = pSPIEL(Qparams, params);
         toc
@@ -247,7 +248,6 @@ if run.pSPIEL
             respSPIEL.M.batlife, '');
         bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
             respSPIEL.M.cirlife, '');
-        %Qparams.cov_vd = pm2_5_cov_vd;             % reset
         
         % logging
         bat_str = num2str(respSPIEL.M.batlife);
@@ -255,7 +255,8 @@ if run.pSPIEL
         str = sprintf('%d %f %f\n', sum(respSPIEL.connected), respSPIEL.F, ...
             respSPIEL.M.C);
         str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
-        log('pSPIEL.txt', str);
+        filename = sprintf('pSPIEL_%s.txt', target);
+        log(filename, str);
     end
 end
 
@@ -311,7 +312,8 @@ if run.PSO
         str = sprintf('%d %f %f\n', sum(connected), resPSO.senQuality, ...
             resPSO.mainCost);
         str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
-        log('PSO.txt', str);
+        filename = sprintf('PSO_%s.txt', target);
+        log(filename, str);
     end
 end
 
@@ -366,7 +368,8 @@ if run.ABC
         str = sprintf('%d %f %f\n', sum(connected), resABC.senQuality, ...
             resABC.mainCost);
         str = sprintf('%s%s\n%s\n', str, bat_str, cir_str);
-        log('ABC.txt', str);
+        filename = sprintf('ABC_%s.txt', target);
+        log(filename, str);
     end
 end
 

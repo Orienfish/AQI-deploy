@@ -108,15 +108,17 @@ fprintf('Fitting the RBF kernel...\n');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 
-%% get the estimated mean and cov at V
-[pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, cov_mat_pm2_5, K_pm2_5);
+%% get the estimated mean and cov at V for plotting
+%[pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, ...
+%    cov_mat_pm2_5, K_pm2_5);
 %bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, 'mean of pm2.5 at D');
 %bubbleplot_wsize(D(:, 1), D(:, 2), var_pm2_5, 'variance of pm2.5 at D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, 'mean of pm2.5 at V given D');
 %bubbleplot_wsize(V(:, 1), V(:, 2), diag(pm2_5_cov_vd), ...
 %    'variance of pm2.5 at V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, cov_mat_temp, K_temp);
+[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
+    cov_mat_temp, K_temp);
 temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
@@ -136,7 +138,7 @@ h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
 % setting Quality parameters
 Qparams.Xv = V;                         % list of reference locations to 
                                         % predict, [lat lon]
-Qparams.cov_vd = pm2_5_cov_vd;          % cov matrix at Xv given pre-deployment D
+Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % cov matrix at Xv given pre-deployment D
 Qparams.Xd = D;                         % list of predeployment locations
 Qparams.mean_d = mean_pm2_5;            % mean value at D
 Qparams.cov_d = cov_mat_pm2_5;          % cov matrix at D
@@ -171,7 +173,6 @@ end
 %% call pSPIEL
 if run.pSPIEL
     fprintf('Calling pSPIEL...\n');
-    Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % to make the function monotonic
     tic
     respSPIEL = pSPIEL(Qparams, params);
     toc
@@ -183,7 +184,6 @@ if run.pSPIEL
         respSPIEL.M.batlife, '');
     bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
         respSPIEL.M.cirlife, '');
-    %Qparams.cov_vd = pm2_5_cov_vd;             % reset
 end
 
 %% call PSO
