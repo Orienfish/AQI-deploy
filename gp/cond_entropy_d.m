@@ -12,15 +12,17 @@ function [condEntropy] = cond_entropy_d(Xv, cov_vd, Xa, cov_ad, K)
 % Return:
 %   condEntropy: the predicted conditional entropy at Xv given Xa
 
+% add noises
+cov_vd = cov_vd + (1e-10) * (eye(size(cov_vd, 1)));
+cov_ad = cov_ad + (1e-10) * (eye(size(cov_ad, 1)));
+
 % calculate the covariance matrix at Xv given Xa
 Sigma_VA = gen_Sigma(Xv, Xa, K);
-Sigma_AV = Sigma_VA';
-cov_ad_inv = inv(cov_ad);
-cov_va = cov_vd - Sigma_VA * cov_ad_inv * Sigma_AV;
+cov_va = cov_vd - Sigma_VA * (cov_ad \ Sigma_VA');
 
 n = size(cov_va, 1);
 
 % calculate the sensing quality or the conditional entropy
-condEntropy = 0.5 * log(det(cov_va)) + 0.5 * n * log(2 * pi * exp(1));
+condEntropy = 1/2 * log(det(cov_va)) + 1/2 * n * log(2 * pi * exp(1));
 end
 

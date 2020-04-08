@@ -15,14 +15,15 @@ function [mean_vd, cov_vd] = gp_predict_knownD(Xv, Xd, mean_d, cov_d, K)
 %   cov_va: a matrix of the predicted covariances at Xv given observations
 %           at Xa
 
+% add noises
+cov_d = cov_d + (1e-10) * (eye(size(cov_d, 1)));
+
 % calculate Sigma_VD, Sigma_DV and Sigma_VV
 Sigma_VD = gen_Sigma(Xv, Xd, K);
-Sigma_DV = Sigma_VD';
-Sigma_VV = gen_Sigma(Xv, Xv, K);
-cov_d_inv = inv(cov_d);
+Sigma_VV = gen_Sigma(Xv, Xv, K) + (1e-10) * (eye(size(Xv, 1)));
 
 % calculate mean vector and covariance matrix
-mean_vd = Sigma_VD * cov_d_inv * mean_d;
-cov_vd = Sigma_VV - Sigma_VD * cov_d_inv * Sigma_DV;
+mean_vd = Sigma_VD * (cov_d \ mean_d);
+cov_vd = Sigma_VV - Sigma_VD * (cov_d \ Sigma_VD');
 end
 

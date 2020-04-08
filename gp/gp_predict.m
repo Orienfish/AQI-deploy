@@ -16,12 +16,10 @@ function [cov_va] = gp_predict(Xv, Xa, K)
 
 % calculate Sigma_VA, SigmA_AV, Sigma_VV and Sigma_AA
 Sigma_VA = gen_Sigma(Xv, Xa, K);
-Sigma_AV = Sigma_VA';
-Sigma_VV = gen_Sigma(Xv, Xv, K);
-Sigma_AA = gen_Sigma(Xa, Xa, K);
-Sigma_AA_inv = inv(Sigma_AA);
+Sigma_VV = gen_Sigma(Xv, Xv, K) + (1e-10) * (eye(size(Xv, 1)));
+Sigma_AA = gen_Sigma(Xa, Xa, K) + (1e-10) * (eye(size(Xa, 1)));
 
 % calculate mean vector and covariance matrix
-cov_va = Sigma_VV - Sigma_VA * Sigma_AA_inv * Sigma_AV;
+cov_va = Sigma_VV - (Sigma_VA * Sigma_AA \ Sigma_VA');
 end
 
