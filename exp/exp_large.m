@@ -1,5 +1,5 @@
-function exp_small(target, run, Q)
-%% Run simulation on the small dataset for the given target
+%function exp_large(target, run, Q)
+%% Run simulation on the large dataset for the given target
 %
 % Args:
 %   run: experimental parameters setting
@@ -16,25 +16,25 @@ addpath('../');
 % V - reference locations
 % A - deployment plan
 m_A = 16;                          % number of sensors to place
-% Q = 10.0;                        % sensing quality quota
+Q = 10.0;                        % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
-edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
+edate = '2020-04-01 23:00:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
-interval = 60 * 10;                % 10 mins = 600 secs
+interval = 60 * 60;                % 60 mins = 3600 secs
 
 % boolean variables deciding whether to run each algorithm
-%run.IDSQ = false;
-%run.pSPIEL = true;
-%run.PSO = true;
-%run.ABC = true;
-%run.iter = 10;
+run.IDSQ = false;
+run.pSPIEL = true;
+run.PSO = true;
+run.ABC = true;
+run.iter = 10;
 
 %% pre-process
 fprintf('start pre-processing...\n');
 % get the mean, var and count of each type of data
-f_list = dir('../data/*Primary*.csv'); % use all primary data
-dataT_sav = '../data/dataT.csv';
+f_list = dir('../dataL/*Primary*.csv'); % use all primary data
+dataT_sav = '../dataL/dataT.csv';
 tic
 if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
@@ -76,8 +76,8 @@ fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 % We need temperature data anyway
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
 %var_temp = vertcat(dataT.temp_var(:)); % var
-cov_mat_temp_sav = '../data/cov_mat_temp.csv';
-corr_mat_temp_sav = '../data/corr_mat_temp.csv';
+cov_mat_temp_sav = '../dataL/cov_mat_temp.csv';
+corr_mat_temp_sav = '../dataL/corr_mat_temp.csv';
 tic
 if exist(cov_mat_temp_sav, 'file') && exist(corr_mat_temp_sav, 'file')
     cov_mat_temp = readmatrix(cov_mat_temp_sav);
@@ -94,8 +94,8 @@ toc
 if strcmp(target, 'pm2_5')
 mean_target = vertcat(dataT.pm2_5_avg(:)); % mean
 %var_target = vertcat(dataT.pm2_5_var(:)); % var
-cov_mat_target_sav = '../data/cov_mat_pm2_5.csv';
-corr_mat_target_sav = '../data/corr_mat_pm2_5.csv';
+cov_mat_target_sav = '../dataL/cov_mat_pm2_5.csv';
+corr_mat_target_sav = '../dataL/corr_mat_pm2_5.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -388,7 +388,7 @@ if run.ABC
     end
 end
 
-end
+%end
 
 %% plot functions
 function bubbleplot(lat, lon, title)
