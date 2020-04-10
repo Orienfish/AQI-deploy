@@ -24,9 +24,10 @@ interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
-run.pSPIEL = false;
-run.PSO = false;
-run.ABC = false;
+run.pSPIEL = true;
+run.PSO = true;
+run.ABC = true;
+run.debugPlot = true;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -107,40 +108,41 @@ toc
 fprintf('Fitting the RBF kernel...\n');
 K_pm2_5 = fit_kernel(dataT.lat, dataT.lon, cov_mat_pm2_5, 'pm2.5');
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
-% shift covariance matrix to the fitted standard one
-cov_mat_pm2_5 = gen_Sigma(D, D, K_pm2_5);
+% shifting temp matrix to standardized one at predeployment locations
 cov_mat_temp = gen_Sigma(D, D, K_temp);
 
 %% get the estimated mean and cov at V for plotting
-[pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, ...
-    cov_mat_pm2_5, K_pm2_5);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, 'mean of pm2.5 at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_pm2_5, 'variance of pm2.5 at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, 'mean of pm2.5 at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(pm2_5_cov_vd), ...
-    'variance of pm2.5 at V given D');
+if run.debugPlot
+    [pm2_5_mean_vd, pm2_5_cov_vd] = gp_predict_knownD(V, D, mean_pm2_5, ...
+        cov_mat_pm2_5, K_pm2_5);
+    bubbleplot_wsize(D(:, 1), D(:, 2), mean_pm2_5, 'mean of pm2.5 at D');
+    bubbleplot_wsize(D(:, 1), D(:, 2), var_pm2_5, 'variance of pm2.5 at D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), pm2_5_mean_vd, 'mean of pm2.5 at V given D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), diag(pm2_5_cov_vd), ...
+        'variance of pm2.5 at V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
-    cov_mat_temp, K_temp);
-temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
-% for plotting distribution
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
-    'variance of temp at V given D');
-% plot heatmap of temperature
-temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-figure;
-h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
-    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
-    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+    [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
+        cov_mat_temp, K_temp);
+    temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
+    % for plotting distribution
+    bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
+    bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
+        'variance of temp at V given D');
+    % plot heatmap of temperature
+    temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
+    figure;
+    h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
+        temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
+        'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+end
 
 %% setting parameters for algorithms
 % setting Quality parameters
 Qparams.Xv = V;                         % list of reference locations to 
                                         % predict, [lat lon]
-Qparams.cov_vd = cov_mat_pm2_5;         % cov matrix at Xv given pre-deployment D
+Qparams.cov_vd = gen_Sigma(V, V, K_pm2_5); % cov matrix at Xv given pre-deployment D
 Qparams.Xd = D;                         % list of predeployment locations
 Qparams.mean_d = mean_pm2_5;            % mean value at D
 Qparams.cov_d = cov_mat_pm2_5;          % cov matrix at D

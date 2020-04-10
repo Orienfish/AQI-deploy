@@ -13,6 +13,7 @@ run.IDSQ = false;
 run.pSPIEL = false;
 run.PSO = false;
 run.ABC = false;
+run.debugPlot = false;
 run.iter = 10;
 
 % run experiments on small dataset

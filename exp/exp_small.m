@@ -171,34 +171,35 @@ end
 fprintf('Fitting the RBF kernel...\n');
 K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
-% shift covariance matrix to the fitted standard one
-cov_mat_target = gen_Sigma(D, D, K_target);
+% shifting temp matrix to standardized one at predeployment locations
 cov_mat_temp = gen_Sigma(D, D, K_temp);
 
 %% get the estimated mean and cov at V for plotting
-[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
-    cov_mat_target, K_target);
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
-    'variance of target at V given D');
+if run.debugPlot
+    [target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
+        cov_mat_target, K_target);
+    bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
+    bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
+        'variance of target at V given D');
 
-[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
-    cov_mat_temp, K_temp);
-temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
-% for plotting distribution
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
-    'variance of temp at V given D');
-% plot heatmap of temperature
-temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-figure;
-h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
-    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
-    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+    [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
+        cov_mat_temp, K_temp);
+    temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
+    % for plotting distribution
+    bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
+    bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
+    bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
+        'variance of temp at V given D');
+    % plot heatmap of temperature
+    temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
+    figure;
+    h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
+        temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
+        'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+end
 
 %% setting parameters for algorithms
 % setting Quality parameters
