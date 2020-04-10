@@ -186,7 +186,6 @@ bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
 
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
     cov_mat_temp, K_temp);
-%temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
 bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');

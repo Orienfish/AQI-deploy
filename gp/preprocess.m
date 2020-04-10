@@ -51,6 +51,7 @@ for f_idx = 1:length(f_list)
     % temperature
     try
         array = T.Temperature_F(~isnan(T.Temperature_F)); % filter out nan
+        array = array(array >= 0); % filter out outliers
         array = array(array < thres); % filter out outliers
         dataT.temp_avg(f_idx) = mean(array);
         dataT.temp_var(f_idx) = var(array);

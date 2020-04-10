@@ -11,8 +11,8 @@ function [mean_vd, cov_vd] = gp_predict_knownD(Xv, Xd, mean_d, cov_d, K)
 %   K: the fitted RBF kernel function
 %
 % Return:
-%   mean_va: a vector of the predicted mean at Xv given observations at Xa
-%   cov_va: a matrix of the predicted covariances at Xv given observations
+%   mean_vd: a vector of the predicted mean at Xv given observations at Xa
+%   cov_vd: a matrix of the predicted covariances at Xv given observations
 %           at Xa
 
 % add noises

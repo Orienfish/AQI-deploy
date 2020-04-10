@@ -64,8 +64,8 @@ for f_idx = 1:length(f_list)
                 fprintf('Invalid label!');
                 return;
         end
-        % fill the data to matrix only when it is less than the threshold
-        if target < thres
+        % fill the data to matrix only when it is valid
+        if target < thres && target >= 0
             mat(idx, f_idx) = target;
         end
     end
