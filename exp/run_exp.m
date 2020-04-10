@@ -29,6 +29,6 @@ run.iter = 10;
 
 % run experiments on large dataset
 exp_large('pm2_5', run, 10.0);
-exp_large('pm1', run, 10.0);
-exp_large('pm10', run, 10.0);
-exp_large('humid', run, 10.0);
+%exp_large('pm1', run, 10.0);
+%exp_large('pm10', run, 10.0);
+%exp_large('humid', run, 10.0);

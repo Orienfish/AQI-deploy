@@ -18,18 +18,21 @@ y = zeros(nPair, 1);
 idx = 1;
 for l1 = 1:n
     for l2 = l1+1:n
-        latlon1 = [lat(l1) lon(l1)];
-        latlon2 = [lat(l2) lon(l2)];
-        [d1km, d2km] = lldistkm(latlon1, latlon2);
-        x(idx) = d1km * 1000; % use d1 distance, convert to meters
-        y(idx) = cov_mat(l1, l2);
-        idx = idx + 1;
+        % omit nan and negative covariances
+        if ~isnan(cov_mat(l1, l2)) && cov_mat(l1, l2) > 0
+            latlon1 = [lat(l1) lon(l1)];
+            latlon2 = [lat(l2) lon(l2)];
+            [d1km, d2km] = lldistkm(latlon1, latlon2);
+            x(idx) = d1km * 1000; % use d1 distance, convert to meters
+            y(idx) = cov_mat(l1, l2);
+            idx = idx + 1;
+        end
     end
 end
 % General model Exp1: f(x) = a*exp(b*x)
 K = fit(x, y, 'exp1');
-%figure();
-%plot(K, x, y);
-%title(type);
+figure();
+plot(K, x, y);
+title(type);
 end
 

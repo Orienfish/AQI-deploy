@@ -70,7 +70,7 @@ for i = 1:n_latV
     end
 end
 fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
-%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 1:n_V, 'order');
+%bubbleplot_wsize(V(:, 1), V(:, 2), 1:n_V, 'order');
 
 %% obtain mean vector and covariance matrix and correlation matrix of certain data types
 % We need temperature data anyway
