@@ -90,7 +90,6 @@ for i = 1:PSOparams.nPop
     [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
         particle(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
         Qparams.cov_temp_d, params.K_temp);
-    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
     
     % setting the rest quality parameters
     Qparams.Xa = particle(i).Position;
@@ -149,7 +148,6 @@ for it = 1:PSOparams.maxIter
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             particle(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         
         % Qparams.Xv = V;                 % use the same value as init
         % Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init

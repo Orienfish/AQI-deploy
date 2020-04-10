@@ -186,7 +186,6 @@ bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
 
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
     cov_mat_temp, K_temp);
-%temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
 bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
@@ -306,7 +305,6 @@ if run.PSO
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         Qparams.Xa = resPSO.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
 
@@ -366,7 +364,6 @@ if run.ABC
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         Qparams.Xa = resABC.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
 

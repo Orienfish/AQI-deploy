@@ -129,7 +129,6 @@ cov_Xa_remain = Qparams.cov_vd(~connected, ~connected);
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD( ...
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
-temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
 % update the sensing quality and maintenance cost

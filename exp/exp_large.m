@@ -305,7 +305,6 @@ if run.PSO
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resPSO.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         Qparams.Xa = resPSO.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
 
@@ -365,7 +364,6 @@ if run.ABC
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             resABC.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
         Qparams.Xa = resABC.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
 

@@ -43,7 +43,6 @@ predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD( ...
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
-temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
 % get the valid indexes directly connected to the sink

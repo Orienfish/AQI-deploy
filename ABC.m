@@ -69,7 +69,6 @@ for i = 1:ABCparams.nPop
     [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
         pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
         Qparams.cov_temp_d, params.K_temp);
-    temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
     
     % setting the rest quality parameters
     Qparams.Xa = pop(i).Position;
@@ -128,7 +127,6 @@ for it = 1:ABCparams.maxIter
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             newbee.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
         Qparams.Xa = newbee.Position;
@@ -189,7 +187,6 @@ for it = 1:ABCparams.maxIter
         [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
             newbee.Position, Qparams.Xd, Qparams.mean_temp_d, ...
             Qparams.cov_temp_d, params.K_temp);
-        temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
         % setting the rest quality parameters
         Qparams.Xa = newbee.Position;
@@ -226,7 +223,6 @@ for it = 1:ABCparams.maxIter
             [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
                 pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
                 Qparams.cov_temp_d, params.K_temp);
-            temp_mean_ad = temp_mean_ad / 4 + 180; % weird fix
 
             % setting the rest quality parameters
             Qparams.Xa = pop(i).Position;

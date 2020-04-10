@@ -32,8 +32,8 @@ end
 % General model Exp1: f(x) = a*exp(b*x)
 K = fit(x, y, 'exp1');
 disp(type); K
-figure();
-plot(K, x, y);
-title(type);
+%figure();
+%plot(K, x, y);
+%title(type);
 end
 
