@@ -75,7 +75,7 @@ fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 %% obtain mean vector and covariance matrix and correlation matrix of certain data types
 % We need temperature data anyway
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
-%var_temp = vertcat(dataT.temp_var(:)); % var
+var_temp = vertcat(dataT.temp_var(:)); % var
 cov_mat_temp_sav = '../data/cov_mat_temp.csv';
 corr_mat_temp_sav = '../data/corr_mat_temp.csv';
 tic
@@ -93,7 +93,7 @@ toc
 % pm2_5
 if strcmp(target, 'pm2_5')
 mean_target = vertcat(dataT.pm2_5_avg(:)); % mean
-%var_target = vertcat(dataT.pm2_5_var(:)); % var
+var_target = vertcat(dataT.pm2_5_var(:)); % var
 cov_mat_target_sav = '../data/cov_mat_pm2_5.csv';
 corr_mat_target_sav = '../data/corr_mat_pm2_5.csv';
 tic
@@ -110,7 +110,7 @@ end
 % temp
 if strcmp(target, 'temp')
 mean_target = mean_temp; % mean
-%var_target = var_temp; % var
+var_target = var_temp; % var
 cov_mat_target = cov_mat_temp;
 corr_mat_target = corr_mat_temp;
 end
@@ -118,7 +118,7 @@ end
 % pm1
 if strcmp(target, 'pm1')
 mean_target = vertcat(dataT.pm1_avg(:)); % mean
-%var_target = vertcat(dataT.pm1_var(:)); % var
+var_target = vertcat(dataT.pm1_var(:)); % var
 cov_mat_target_sav = '../data/cov_mat_pm1.csv';
 corr_mat_target_sav = '../data/corr_mat_pm1.csv';
 tic
@@ -135,7 +135,7 @@ end
 % pm10
 if strcmp(target, 'pm10')
 mean_target = vertcat(dataT.pm10_avg(:)); % mean
-%var_target = vertcat(dataT.pm10_var(:)); % var
+var_target = vertcat(dataT.pm10_var(:)); % var
 cov_mat_target_sav = '../data/cov_mat_pm10.csv';
 corr_mat_target_sav = '../data/corr_mat_pm10.csv';
 tic
@@ -152,7 +152,7 @@ end
 % humid
 if strcmp(target, 'humid')
 mean_target = vertcat(dataT.humid_avg(:)); % mean
-%var_target = vertcat(dataT.humid_var(:)); % var
+var_target = vertcat(dataT.humid_var(:)); % var
 cov_mat_target_sav = '../data/cov_mat_humid.csv';
 corr_mat_target_sav = '../data/corr_mat_humid.csv';
 tic
@@ -171,32 +171,35 @@ end
 fprintf('Fitting the RBF kernel...\n');
 K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
+% shift covariance matrix to the fitted standard one
+cov_mat_target = gen_Sigma(D, D, K_target);
+cov_mat_temp = gen_Sigma(D, D, K_temp);
 
 %% get the estimated mean and cov at V for plotting
-%[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
-%    cov_mat_target, K_target);
-%bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
-%bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
-%    'variance of target at V given D');
+[target_mean_vd, target_cov_vd] = gp_predict_knownD(V, D, mean_target, ...
+    cov_mat_target, K_target);
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_target, 'mean of target at D');
+bubbleplot_wsize(D(:, 1), D(:, 2), var_target, 'variance of target at D');
+bubbleplot_wsize(V(:, 1), V(:, 2), target_mean_vd, 'mean of target at V given D');
+bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
+    'variance of target at V given D');
 
-%[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
-%    cov_mat_temp, K_temp);
+[temp_mean_vd, temp_cov_vd] = gp_predict_knownD(V, D, mean_temp, ...
+    cov_mat_temp, K_temp);
 %temp_mean_vd = temp_mean_vd / 4 + 180; % weird fix
-%temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
+temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
-%bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
-%bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
-%bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
-%    'variance of temp at V given D');
+bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
+bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
+bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
+bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
+    'variance of temp at V given D');
 % plot heatmap of temperature
-%temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-%figure;
-%h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
-%    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
-%    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
+figure;
+h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
+    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
+    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
 
 %% setting parameters for algorithms
 % setting Quality parameters
