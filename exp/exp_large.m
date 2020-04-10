@@ -119,8 +119,8 @@ end
 if strcmp(target, 'pm1')
 mean_target = vertcat(dataT.pm1_avg(:)); % mean
 var_target = vertcat(dataT.pm1_var(:)); % var
-cov_mat_target_sav = '../data/cov_mat_pm1.csv';
-corr_mat_target_sav = '../data/corr_mat_pm1.csv';
+cov_mat_target_sav = '../dataL/cov_mat_pm1.csv';
+corr_mat_target_sav = '../dataL/corr_mat_pm1.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -136,8 +136,8 @@ end
 if strcmp(target, 'pm10')
 mean_target = vertcat(dataT.pm10_avg(:)); % mean
 var_target = vertcat(dataT.pm10_var(:)); % var
-cov_mat_target_sav = '../data/cov_mat_pm10.csv';
-corr_mat_target_sav = '../data/corr_mat_pm10.csv';
+cov_mat_target_sav = '../dataL/cov_mat_pm10.csv';
+corr_mat_target_sav = '../dataL/corr_mat_pm10.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -153,8 +153,8 @@ end
 if strcmp(target, 'humid')
 mean_target = vertcat(dataT.humid_avg(:)); % mean
 var_target = vertcat(dataT.humid_var(:)); % var
-cov_mat_target_sav = '../data/cov_mat_humid.csv';
-corr_mat_target_sav = '../data/corr_mat_humid.csv';
+cov_mat_target_sav = '../dataL/cov_mat_humid.csv';
+corr_mat_target_sav = '../dataL/corr_mat_humid.csv';
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -188,17 +188,17 @@ bubbleplot_wsize(V(:, 1), V(:, 2), diag(target_cov_vd), ...
     cov_mat_temp, K_temp);
 temp_mean_vd = fah2cel(temp_mean_vd); % convert to Celsius
 % for plotting distribution
-bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
-bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
-bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
-bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
-    'variance of temp at V given D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), mean_temp, 'mean of temp at D');
+%bubbleplot_wsize(D(:, 1), D(:, 2), var_temp, 'variance of temp at D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), temp_mean_vd, 'mean of temp at V given D');
+%bubbleplot_wsize(V(:, 1), V(:, 2), diag(temp_cov_vd), ...
+%    'variance of temp at V given D');
 % plot heatmap of temperature
-temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-figure;
-h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
-    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
-    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
+%temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
+%figure;
+%h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
+%    temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
+%    'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);
 
 %% setting parameters for algorithms
 % setting Quality parameters
