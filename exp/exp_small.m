@@ -173,6 +173,9 @@ K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 % shifting temp matrix to standardized one at predeployment locations
 cov_mat_temp = gen_Sigma(D, D, K_temp);
+if strcmp(target, 'temp')
+    cov_mat_target = cov_mat_temp;
+end
 
 %% get the estimated mean and cov at V for plotting
 if run.debugPlot

@@ -132,7 +132,7 @@ if run.debugPlot
         'variance of temp at V given D');
     % plot heatmap of temperature
     temp_mean_vd = flipud(reshape(temp_mean_vd, [n_lonV, n_latV])');
-    figure;
+    figure();
     h = heatmap(round(V_lon*100)/100, round(V_lat*100)/100, ...
         temp_mean_vd, 'Colormap', flipud(autumn), 'CellLabelColor','none', ...
         'XLabel','Longitude', 'YLabel', 'Latitude', 'FontSize', 16);

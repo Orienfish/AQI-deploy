@@ -17,10 +17,10 @@ function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
 
 % settings for sensor workloads
 params.Pto = 0.52;       % 520mW transmission power baseline
-params.Btx = 250;       % 2kbps = 250B/s bandwidth
-params.Brx = 250;
-params.Ltx_init = 1e3;   % 1kB packet length
-params.Lrx_init = 1e3;           
+params.Btx = 125;        % 1kbps = 125B/s bandwidth
+params.Brx = 125;
+params.Ltx_init = 100;   % 100B packet length
+params.Lrx_init = 100;           
 params.Prx = 0.2;        % 200mW receiving power
 params.Psen = 0.2;       % 200mW senisng power
 params.tsen = 0.3;       % 300ms sensing time
@@ -41,6 +41,9 @@ C = 0;            % total maintenance cost
 out.batlife = zeros(size(Xa, 1), 1);
 out.cirlife = zeros(size(Xa, 1), 1);
 
+% get children cnt of each node from MST
+child_cnt = get_child_cnt(predMST);
+
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
     if conn_idx(i) % only process those nodes that are connected
@@ -49,10 +52,9 @@ for i = 1:size(Xa, 1)
         if isinf(txDist_km)
             error('Inf commMST!'); % security check
         end
-        child_cnt = sum(predMST == i); % get child cnt of node i
         params.dtx = txDist_km;
-        params.Ltx = params.Ltx_init * (child_cnt + 1);
-        params.Lrx = params.Lrx_init * child_cnt;
+        params.Ltx = params.Ltx_init * (child_cnt(i) + 1);
+        params.Lrx = params.Lrx_init * child_cnt(i);
         % fprintf('child cnt: %d Ltx: %d Lrx: %d\n', child_cnt, params.Ltx, params.Lrx);
         
         % estimate power in W

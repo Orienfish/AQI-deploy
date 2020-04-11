@@ -10,17 +10,18 @@ addpath('../SFO/sfo/');
 
 % settings
 run.IDSQ = false;
-run.pSPIEL = false;
-run.PSO = false;
-run.ABC = false;
+run.pSPIEL = true;
+run.PSO = true;
+run.ABC = true;
 run.debugPlot = false;
 run.iter = 10;
 
 % run experiments on small dataset
 exp_small('pm2_5', run, 10.0);
-exp_small('pm1', run, 10.0);
-exp_small('pm10', run, 10.0);
-exp_small('humid', run, 10.0);
+%exp_small('pm1', run, 10.0);
+%exp_small('pm10', run, 10.0);
+%exp_small('humid', run, 10.0);
+%exp_small('temp', run, 10.0); % cannot run pSPIEL, cov_vd matrix is not PSD
 %exp_small('pm2_5', run, 7.0);
 %exp_small('pm2_5', run, 8.0);
 %exp_small('pm2_5', run, 9.0);
