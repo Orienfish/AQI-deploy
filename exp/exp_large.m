@@ -15,7 +15,7 @@ addpath('../');
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 16;                          % number of sensors to place
+m_A = 80;                          % number of sensors to place
 %Q = 10.0;                        % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
@@ -173,7 +173,8 @@ K_target = fit_kernel(dataT.lat, dataT.lon, cov_mat_target, target);
 K_temp = fit_kernel(dataT.lat, dataT.lon, cov_mat_temp, 'temp');
 % shifting temp matrix to standardized one at predeployment locations
 cov_mat_temp = gen_Sigma(D, D, K_temp);
-fix matrix
+% fill in the NaN and 0s in cov_mat_target
+cov_mat_target = fix_matrix(D, cov_mat_target, K_target);
 
 %% get the estimated mean and cov at V for plotting
 if run.debugPlot
@@ -250,11 +251,11 @@ if run.pSPIEL
         fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f\n', ...
             sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C);
         nodespSPIEL = vertcat(respSPIEL.Position, c);
-        %plot_solution(nodespSPIEL, respSPIEL.pred);
-        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-        %    respSPIEL.M.batlife, '');
-        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-        %    respSPIEL.M.cirlife, '');
+        plot_solution(nodespSPIEL, respSPIEL.pred);
+        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+            respSPIEL.M.batlife, '');
+        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+            respSPIEL.M.cirlife, '');
         
         % logging
         bat_str = '';
@@ -292,15 +293,15 @@ if run.PSO
         toc
 
         % plot the BestCosts curve
-        %figure();
-        %plot(resPSO.BestCosts, 'LineWidth', 2);
-        %xlabel('Iteration');
-        %ylabel('Best Cost');
+        figure();
+        plot(resPSO.BestCosts, 'LineWidth', 2);
+        xlabel('Iteration');
+        ylabel('Best Cost');
 
         % plot the solution
         [PSO_G, PSOpred] = MST(resPSO.Position, c, R);
         nodesPSO = vertcat(resPSO.Position, c);
-        %plot_solution(nodesPSO, PSOpred);
+        plot_solution(nodesPSO, PSOpred);
 
         % plot lifetime of each node
         connected = ~isnan(PSOpred(1:params.m_A)); % a logical array of connected sensors
@@ -313,8 +314,8 @@ if run.PSO
         % calculate the maintenance cost of connected sensors
         M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
             params.logging);
-        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
-        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
         bat_str = '';
@@ -351,15 +352,15 @@ if run.ABC
         toc
 
         % plot the BestCosts curve
-        %figure();
-        %plot(resABC.BestCosts, 'LineWidth', 2);
-        %xlabel('Iteration');
-        %ylabel('Best Cost');
+        figure();
+        plot(resABC.BestCosts, 'LineWidth', 2);
+        xlabel('Iteration');
+        ylabel('Best Cost');
 
         % plot the solution
         [ABC_G, ABCpred] = MST(resABC.Position, c, R);
         nodesABC = vertcat(resABC.Position, c);
-        %plot_solution(nodesABC, ABCpred);
+        plot_solution(nodesABC, ABCpred);
 
         % plot lifetime of each node
         connected = ~isnan(ABCpred(1:params.m_A)); % a logical array of connected sensors
@@ -372,8 +373,8 @@ if run.ABC
         % calculate the maintenance cost of connected sensors
         M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
             params.logging);
-        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
-        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
         bat_str = '';
