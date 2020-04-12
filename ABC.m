@@ -80,6 +80,7 @@ for i = 1:ABCparams.nPop
         
         % loop until generate one valid solutioin
         if res.P <= ABCparams.thres
+            fprintf('init %d\n', i);
             break;
         end
     end

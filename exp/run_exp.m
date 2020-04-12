@@ -11,7 +11,7 @@ addpath('../SFO/sfo/');
 % settings
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = false;
+run.PSO = true;
 run.ABC = true;
 run.debugPlot = true;
 run.iter = 1;

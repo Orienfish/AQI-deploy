@@ -16,8 +16,8 @@ addpath('../');
 % V - reference locations
 % A - deployment plan
 m_A = 70;                          % number of sensors to place
-%Q = 10.0;                        % sensing quality quota
-R = 10;                            % communication range of sensors in km
+%Q = 10.0;                         % sensing quality quota
+R = 30;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-04-01 23:00:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -287,7 +287,7 @@ if run.PSO
         PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
         PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
         PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
-        PSOparams.thres = 500;                  % penalty threshold in initialzation
+        PSOparams.thres = 1000;                  % penalty threshold in initialzation
 
         tic
         resPSO = PSO(Qparams, params, PSOparams);
@@ -347,7 +347,7 @@ if run.ABC
         ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                                 % Abandonment Limit Parameter (Trial Limit)
         ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
-        ABCparams.thres = 400;                  % penalty threshold in initialzation
+        ABCparams.thres = 1000;                  % penalty threshold in initialzation
 
         tic
         resABC = ABC(Qparams, params, ABCparams);
