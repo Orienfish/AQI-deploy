@@ -13,7 +13,7 @@ run.IDSQ = false;
 run.pSPIEL = true;
 run.PSO = true;
 run.ABC = true;
-run.debugPlot = true;
+run.debugPlot = false;
 run.iter = 1;
 
 % run experiments on small dataset
@@ -31,7 +31,7 @@ run.iter = 1;
 % run experiments on large dataset
 % Quota -> # of sensors in pSPIEL
 % 50 -> 85, 40 -> 62
-exp_large('pm2_5', run, 48.0); 
+exp_large('pm2_5', run, 40.0); 
 %exp_large('pm1', run, 48.0);
 %exp_large('pm10', run, 48.0);
 %exp_large('humid', run, 48.0);

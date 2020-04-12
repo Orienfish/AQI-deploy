@@ -17,7 +17,7 @@ addpath('../');
 % A - deployment plan
 m_A = 70;                          % number of sensors to place
 %Q = 10.0;                         % sensing quality quota
-R = 30;                            % communication range of sensors in km
+R = 20;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-04-01 23:00:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
@@ -224,7 +224,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = true;                 % logging flag
+params.logging = false;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty
@@ -280,7 +280,7 @@ if run.PSO
         PSOparams.nVar = m_A;                   % number of unknown decision variables
         PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of PSO
-        PSOparams.maxIter = 50;                % maximum number of iterations
+        PSOparams.maxIter = 100;                % maximum number of iterations
         PSOparams.nPop = 10;                    % populaton size
         PSOparams.chi = 0.729;                  % constriction factor
         PSOparams.w = PSOparams.chi;            % inertia coefficient
@@ -341,10 +341,10 @@ if run.ABC
         ABCparams.nVar = m_A;                   % number of unknown decision variables
         ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of ABC
-        ABCparams.maxIter = 50;                % maximum number of iterations
+        ABCparams.maxIter = 100;                % maximum number of iterations
         ABCparams.nPop = 10;                    % populaton size
         ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
-        ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
+        ABCparams.L = round(0.4 * ABCparams.maxIter); 
                                                 % Abandonment Limit Parameter (Trial Limit)
         ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
         ABCparams.thres = 1000;                  % penalty threshold in initialzation

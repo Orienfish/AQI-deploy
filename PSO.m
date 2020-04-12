@@ -101,7 +101,6 @@ for i = 1:PSOparams.nPop
         
         % loop until generate one valid solutioin
         if res.P <= PSOparams.thres
-            fprintf('init %d\n', i);
             break;
         end
     end
