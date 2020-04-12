@@ -11,7 +11,7 @@ addpath('../SFO/sfo/');
 % settings
 run.IDSQ = false;
 run.pSPIEL = true;
-run.PSO = true;
+run.PSO = false;
 run.ABC = true;
 run.debugPlot = true;
 run.iter = 1;
@@ -32,6 +32,6 @@ run.iter = 1;
 % Quota -> # of sensors in pSPIEL
 % 50 -> 85, 40 -> 62
 exp_large('pm2_5', run, 48.0); 
-exp_large('pm1', run, 48.0);
-exp_large('pm10', run, 48.0);
-exp_large('humid', run, 48.0);
+%exp_large('pm1', run, 48.0);
+%exp_large('pm10', run, 48.0);
+%exp_large('humid', run, 48.0);

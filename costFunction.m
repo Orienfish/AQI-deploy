@@ -22,6 +22,7 @@ function [out] = costFunction(Qparams, params)
 %   out.cost: the cost of the current deployment A
 %   out.F: sensing quality of the solution
 %   out.M: maintenance cost of the solution
+%   out.P: penalty of the solution
 %   out.G: the feasible connection graph of the current deployment A
 %   out.pred: the predecessor in MST of A
 addpath('./mlibs/');
@@ -48,16 +49,16 @@ end
 [Tree, pred] = graphminspantree(sparse(G), params.m_A+1);
 connected = ~isnan(pred); % a logical array of connected sensors
 
-if params.logging
-    disp('G:');
-    disp(G);
-    disp('Tree:');
-    disp(Tree);
-    disp('pred:');
-    disp(pred);
-    disp('connected:');
-    disp(connected);
-end
+%if params.logging
+%    disp('G:');
+%    disp(G);
+%    disp('Tree:');
+%    disp(Tree);
+%    disp('pred:');
+%    disp(pred);
+%    disp('connected:');
+%    disp(connected);
+%end
 
 % calculate the sensing quality of all sensors
 F = sense_quality(Qparams.Xv, Qparams.cov_vd, Qparams.Xa, Qparams.cov_ad, ...
@@ -66,13 +67,13 @@ F = real(F); % take the real part
 
 % calculate the maintenance cost of connected sensors
 M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...
-    params.logging);
+    false);
 
 % calculate the penalty of unconnected sensors
 P = params.penalty * (sum(~connected));
 
 % final cost
-cost = params.weights(1) * M.C / 6.0 + ...
+cost = params.weights(1) * M.C / 60.0 + ...
     params.weights(2) * max(params.Q - F, 0) ... 
     + params.weights(3) * P;
 if params.logging
@@ -84,6 +85,7 @@ end
 out.cost = cost;
 out.F = F;
 out.M = M.C;
+out.P = P;
 out.G = G;
 out.pred = pred;
 end

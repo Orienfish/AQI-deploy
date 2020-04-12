@@ -32,6 +32,7 @@ function [out] = ABC(Qparams, params, ABCparams)
 %   ABCparams.nOnlooker: number of onlooker bees
 %   ABCparams.L: abandonment limit parameter (trial limit)
 %   ABCparams.a: acceleration coefficient upper bound
+%   ABCparams.thres: penalty threshold in initialzation
 %
 % Return:
 %   out.Position: the global best locations
@@ -56,25 +57,32 @@ BestSol.Cost = inf;
 
 % Create Initial Population
 for i = 1:ABCparams.nPop
-    % generate random solution
-    pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
-        params.bound.latUpper, ABCparams.nVar, 1);
-    pop(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
-        params.bound.lonUpper, ABCparams.nVar, 1);
-    
-    % cost evaluation
-    [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-        pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
-        Qparams.cov_d, params.K);
-    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-        pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
-        Qparams.cov_temp_d, params.K_temp);
-    
-    % setting the rest quality parameters
-    Qparams.Xa = pop(i).Position;
-    Qparams.Ta = fah2cel(temp_mean_ad);
-    Qparams.cov_ad = pm2_5_cov_ad;
-    res = costFunction(Qparams, params);
+    while true
+        % generate random solution
+        pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
+            params.bound.latUpper, ABCparams.nVar, 1);
+        pop(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
+            params.bound.lonUpper, ABCparams.nVar, 1);
+
+        % cost evaluation
+        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            Qparams.cov_d, params.K);
+        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+            pop(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            Qparams.cov_temp_d, params.K_temp);
+
+        % setting the rest quality parameters
+        Qparams.Xa = pop(i).Position;
+        Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.cov_ad = pm2_5_cov_ad;
+        res = costFunction(Qparams, params);
+        
+        % loop until generate one valid solutioin
+        if res.P <= ABCparams.thres
+            break;
+        end
+    end
     
     pop(i).Cost = res.cost;
     pop(i).senQuality = res.F;
@@ -209,7 +217,7 @@ for it = 1:ABCparams.maxIter
     % Scout Bees
     for i = 1:ABCparams.nPop
         if C(i) >= ABCparams.L
-            % fprintf('Abandon current source!\n');
+            fprintf('Abandon current source!\n');
             % generate random solution
             pop(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
                 params.bound.latUpper, ABCparams.nVar, 1);

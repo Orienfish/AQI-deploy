@@ -15,7 +15,7 @@ addpath('../');
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 80;                          % number of sensors to place
+m_A = 70;                          % number of sensors to place
 %Q = 10.0;                        % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
@@ -224,7 +224,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = false;                 % logging flag
+params.logging = true;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty
@@ -281,12 +281,13 @@ if run.PSO
         PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of PSO
         PSOparams.maxIter = 50;                % maximum number of iterations
-        PSOparams.nPop = 50;                    % populaton size
+        PSOparams.nPop = 10;                    % populaton size
         PSOparams.chi = 0.729;                  % constriction factor
         PSOparams.w = PSOparams.chi;            % inertia coefficient
         PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
         PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
         PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
+        PSOparams.thres = 500;                  % penalty threshold in initialzation
 
         tic
         resPSO = PSO(Qparams, params, PSOparams);
@@ -341,11 +342,12 @@ if run.ABC
         ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of ABC
         ABCparams.maxIter = 50;                % maximum number of iterations
-        ABCparams.nPop = 50;                    % populaton size
+        ABCparams.nPop = 10;                    % populaton size
         ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
         ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                                 % Abandonment Limit Parameter (Trial Limit)
         ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
+        ABCparams.thres = 400;                  % penalty threshold in initialzation
 
         tic
         resABC = ABC(Qparams, params, ABCparams);

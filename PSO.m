@@ -34,6 +34,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   PSOparams.wdamp: damping ratio of inertia coefficient
 %   PSOparams.c1: personal acceleration coefficient
 %   PSOparams.c2: social acceleration coefficient
+%   PSOparams.thres: penalty threshold in initialzation
 %
 % Return:
 %   out.Position: the global best locations
@@ -73,29 +74,36 @@ GlobalBest.Cost = inf;
 
 % initialize population members
 for i = 1:PSOparams.nPop
-    % generate random solution
-    particle(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
-        params.bound.latUpper, PSOparams.nVar, 1);
-    particle(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
-        params.bound.lonUpper, PSOparams.nVar, 1);
-    
-    % initialize velocity
-    particle(i).Velocity = zeros(PSOparams.VarSize);
-    
-    % cost evaluation
-    % estimate the mean at given position
-    [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
-        particle(i).Position, Qparams.Xd, Qparams.mean_d, ...
-        Qparams.cov_d, params.K);
-    [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
-        particle(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
-        Qparams.cov_temp_d, params.K_temp);
-    
-    % setting the rest quality parameters
-    Qparams.Xa = particle(i).Position;
-    Qparams.Ta = fah2cel(temp_mean_ad);
-    Qparams.cov_ad = pm2_5_cov_ad;
-    res = costFunction(Qparams, params);
+    while true
+        % generate random solution
+        particle(i).Position(:, 1) = unifrnd(params.bound.latLower, ...
+            params.bound.latUpper, PSOparams.nVar, 1);
+        particle(i).Position(:, 2) = unifrnd(params.bound.lonLower, ...
+            params.bound.lonUpper, PSOparams.nVar, 1);
+
+        % initialize velocity
+        particle(i).Velocity = zeros(PSOparams.VarSize);
+
+        % cost evaluation
+        % estimate the mean at given position
+        [pm2_5_mean_ad, pm2_5_cov_ad] = gp_predict_knownD( ...
+            particle(i).Position, Qparams.Xd, Qparams.mean_d, ...
+            Qparams.cov_d, params.K);
+        [temp_mean_ad, temp_cov_ad] = gp_predict_knownD( ...
+            particle(i).Position, Qparams.Xd, Qparams.mean_temp_d, ...
+            Qparams.cov_temp_d, params.K_temp);
+
+        % setting the rest quality parameters
+        Qparams.Xa = particle(i).Position;
+        Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.cov_ad = pm2_5_cov_ad;
+        res = costFunction(Qparams, params);
+        
+        % loop until generate one valid solutioin
+        if res.P <= PSOparams.thres
+            break;
+        end
+    end
     
     particle(i).Cost = res.cost;
     particle(i).senQuality = res.F;
