@@ -32,6 +32,7 @@ run.iter = 1;
 % Quota -> # of sensors in pSPIEL
 % 50 -> 85, 40 -> 62
 exp_large('pm2_5', run, 40.0); 
-%exp_large('pm1', run, 48.0);
-%exp_large('pm10', run, 48.0);
-%exp_large('humid', run, 48.0);
+exp_large('pm1', run, 40.0);
+exp_large('pm10', run, 40.0);
+exp_large('humid', run, 40.0);
+exp_large('temp', run, 40.0);

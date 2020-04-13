@@ -76,10 +76,10 @@ P = params.penalty * (sum(~connected));
 cost = params.weights(1) * M.C / 60.0 + ...
     params.weights(2) * max(params.Q - F, 0) ... 
     + params.weights(3) * P;
-%if params.logging
+if params.logging
     fprintf('sensing quality: %f main cost: %f penalty: %f\n', F, M.C, P);
     fprintf('total cost: %f\n', cost);
-%end
+end
 
 % fill in the output results
 out.cost = cost;
