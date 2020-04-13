@@ -33,7 +33,7 @@ n_V = size(Qparams.Xv, 1);  % number of reference locations Qparams.Xv
 valid_idx = zeros(n_V, 1);  % a list of valid indexes in comm. range
 Xa_idx = zeros(n_V, 1);     % init idx list for Xa to all zero
 lastF = 0.0;                % sensing quality in last round of greedy selection
-lastM = 0.0;                % maintenance cost in last round of greedy selection
+lastM.C = 0.0;                % maintenance cost in last round of greedy selection
 commMST = NaN(n_V + 1);     % init a matrix for connection graph
                             % first n entries are for Qparams.Xv, the last one is  
                             % for the sink c. A single-direction MST.
@@ -46,6 +46,7 @@ predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
 % get the valid indexes directly connected to the sink
+predMST(n_V+1) = 0;       % configure the predecessor of the sink to 0
 for p = 1:length(valid_idx)
     % check the distance to c
     [d1km, d2km] = lldistkm(Qparams.Xv(p, :), params.c);
@@ -92,11 +93,11 @@ for i = 1:params.m_A
             curM = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
                 commMST, predMST, false);
             curRes = IDSQparams.alpha * (curF - lastF) - ...
-                (1 - IDSQparams.alpha) * (curM.C - lastM);
+                (1 - IDSQparams.alpha) * (curM.C - lastM.C);
             
             if params.logging
                 fprintf('node: %d senQ gain: %f main cost gain: %f res: %f\n', ...
-                    j, curF - lastF, curM.C - lastM, curRes);
+                    j, curF - lastF, curM.C - lastM.C, curRes);
             end
             
             % compare and update
@@ -104,7 +105,7 @@ for i = 1:params.m_A
                 maxRes = curRes;
                 maxRes_idx = j;
                 maxF = curF;
-                maxM = curM.C;
+                maxM = curM;
             end
             
             % reset the Xa index
@@ -119,7 +120,7 @@ for i = 1:params.m_A
         lastM = maxM;
         if params.logging
             fprintf('The selection in round %d is %d, senQ: %f, main cost: %f\n', ...
-                i, maxRes_idx, lastF, lastM);
+                i, maxRes_idx, lastF, lastM.C);
         end
         
         % update the valid indexes

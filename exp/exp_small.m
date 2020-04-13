@@ -238,7 +238,19 @@ if run.IDSQ
         IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
         plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-        fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+        fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M.C);
+        
+        % logging
+        bat_str = '';
+        cir_str = '';
+        for idx = 1:params.n_V
+            bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
+            cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
+        end
+        str = sprintf('%f %f', resIDSQ.F, resIDSQ.M.C);
+        str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
+        filename = sprintf('IDSQ_%s_%d.txt', target, Q);
+        log(filename, str);
     end
 end
 
