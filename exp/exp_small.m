@@ -235,19 +235,21 @@ params.penalty = 100;                   % penalty for non-connected nodes
 if run.IDSQ
     for it = 1:run.iter
         fprintf('Calling IDSQ...\n');
-        IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
+        IDSQparams.alpha = 0.6;          % the weight factor in IDSQ
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
-        plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-        fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M.C);
+        %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+        connected = size(resIDSQ.Xa, 1); % number of selected sensors
+        fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f\n', ...
+            connected, resIDSQ.F, resIDSQ.M.C);
         
         % logging
         bat_str = '';
         cir_str = '';
-        for idx = 1:params.n_V
+        for idx = 1:connected
             bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
         end
-        str = sprintf('%f %f', resIDSQ.F, resIDSQ.M.C);
+        str = sprintf('%d %f %f', connected, resIDSQ.F, resIDSQ.M.C);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('IDSQ_%s_%d.txt', target, Q);
         log(filename, str);
