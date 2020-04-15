@@ -9,10 +9,10 @@ addpath('../gp/');
 addpath('../SFO/sfo/');
 
 % settings
-run.IDSQ = true;
+run.IDSQ = false;
 run.pSPIEL = false;
-run.PSO = false;
-run.ABC = false;
+run.PSO = true;
+run.ABC = true;
 run.debugPlot = false;
 run.iter = 1;
 

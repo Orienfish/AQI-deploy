@@ -15,7 +15,7 @@ addpath('../');
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 70;                          % number of sensors to place
+m_A = 54;                          % number of sensors to place
 %Q = 10.0;                         % sensing quality quota
 R = 20;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
