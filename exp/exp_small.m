@@ -245,7 +245,7 @@ if run.IDSQ
         % logging
         bat_str = '';
         cir_str = '';
-        for idx = 1:connected
+        for idx = 1:params.n_V
             bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
         end

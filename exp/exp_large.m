@@ -236,8 +236,22 @@ if run.IDSQ
         fprintf('Calling IDSQ...\n');
         IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
-        plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-        fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+        %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+        connected = size(resIDSQ.Xa, 1); % number of selected sensors
+        fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f\n', ...
+            connected, resIDSQ.F, resIDSQ.M.C);
+        
+        % logging
+        bat_str = '';
+        cir_str = '';
+        for idx = 1:params.n_V
+            bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
+            cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
+        end
+        str = sprintf('%d %f %f', connected, resIDSQ.F, resIDSQ.M.C);
+        str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
+        filename = sprintf('IDSQ_%s_%d.txt', target, Q);
+        log(filename, str);
     end
 end
 
@@ -251,11 +265,11 @@ if run.pSPIEL
         fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f\n', ...
             sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C);
         nodespSPIEL = vertcat(respSPIEL.Position, c);
-        plot_solution(nodespSPIEL, respSPIEL.pred);
-        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-            respSPIEL.M.batlife, '');
-        bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
-            respSPIEL.M.cirlife, '');
+        %plot_solution(nodespSPIEL, respSPIEL.pred);
+        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+        %    respSPIEL.M.batlife, '');
+        %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
+        %    respSPIEL.M.cirlife, '');
         
         % logging
         bat_str = '';
@@ -302,7 +316,7 @@ if run.PSO
         % plot the solution
         [PSO_G, PSOpred] = MST(resPSO.Position, c, R);
         nodesPSO = vertcat(resPSO.Position, c);
-        plot_solution(nodesPSO, PSOpred);
+        %plot_solution(nodesPSO, PSOpred);
 
         % plot lifetime of each node
         connected = ~isnan(PSOpred(1:params.m_A)); % a logical array of connected sensors
@@ -315,8 +329,8 @@ if run.PSO
         % calculate the maintenance cost of connected sensors
         M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
             params.logging);
-        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
-        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
         bat_str = '';
@@ -362,7 +376,7 @@ if run.ABC
         % plot the solution
         [ABC_G, ABCpred] = MST(resABC.Position, c, R);
         nodesABC = vertcat(resABC.Position, c);
-        plot_solution(nodesABC, ABCpred);
+        %plot_solution(nodesABC, ABCpred);
 
         % plot lifetime of each node
         connected = ~isnan(ABCpred(1:params.m_A)); % a logical array of connected sensors
@@ -375,8 +389,8 @@ if run.ABC
         % calculate the maintenance cost of connected sensors
         M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
             params.logging);
-        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
-        bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
+        %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
         
         % logging
         bat_str = '';
