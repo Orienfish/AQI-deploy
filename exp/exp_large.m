@@ -294,7 +294,7 @@ if run.PSO
         PSOparams.nVar = m_A;                   % number of unknown decision variables
         PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of PSO
-        PSOparams.maxIter = 100;                % maximum number of iterations
+        PSOparams.maxIter = 50;                % maximum number of iterations
         PSOparams.nPop = 10;                    % populaton size
         PSOparams.chi = 0.729;                  % constriction factor
         PSOparams.w = PSOparams.chi;            % inertia coefficient
@@ -355,7 +355,7 @@ if run.ABC
         ABCparams.nVar = m_A;                   % number of unknown decision variables
         ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of ABC
-        ABCparams.maxIter = 100;                % maximum number of iterations
+        ABCparams.maxIter = 50;                % maximum number of iterations
         ABCparams.nPop = 10;                    % populaton size
         ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
         ABCparams.L = round(0.4 * ABCparams.maxIter); 
