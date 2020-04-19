@@ -104,8 +104,20 @@ for p = 1:params.n_V
 end
 
 % get x and y coordinate for the biggest gain
-[M,K] = max(I(:));
-[x, y] = ind2sub(size(I),K);
+M = 0.0; % largest element
+K = [0, 0]; % index storing largest element
+x = 0.0; % x-coordinate
+y = 0.0; % y-coordinate
+
+while true
+    [M, K] = max(I(:));
+    [x, y] = ind2sub(size(I),K);
+    if valid_idx(x) == 1 && valid_idx(y) == 1 % check valid
+        break
+    else
+        I(x, y) = -inf;
+    end
+end
 
 % reset Xa_idx
 Xa_idx = zeros(n_V, 1);
