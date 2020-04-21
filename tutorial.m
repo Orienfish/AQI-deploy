@@ -24,10 +24,11 @@ interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
-run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
-run.debugPlot = true;
+run.pSPIEL = false;
+run.PSO = false;
+run.ABC = false;
+run.debugPlot = false;
+run.DWG = true;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -171,7 +172,7 @@ if run.IDSQ
     IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
     resIDSQ = IDSQ(Qparams, params, IDSQparams);
     plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-    fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M);
+    fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M.C);
 end
 
 %% call pSPIEL
@@ -277,6 +278,14 @@ if run.ABC
         params.logging);
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+end
+
+%% call the greedy heuristic Distance-Weighted Greedy
+if run.DWG
+    fprintf('Calling DWG...\n');
+    resDWG = DWG(Qparams, params);
+    plot_IDSQ(resDWG.Xa, resDWG.commMST, c);
+    fprintf('DWG: senQ: %f mainCost: %f\n', resDWG.F, resDWG.M.C);
 end
 
 %% plot functions
