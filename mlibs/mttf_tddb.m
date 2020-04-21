@@ -4,7 +4,7 @@ function [t0] = mttf_tddb(Tc)
 %   Tc: core temperature in Kelvin
 %
 % Return:
-%   t0: estimated lifetime in years
+%   t0: estimated lifetime in days
 
 % required constants
 Ao = 4.0;                            % empirical value
