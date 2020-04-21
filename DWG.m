@@ -19,8 +19,11 @@ function [res] = DWG(Qparams, params)
 %
 % Return:
 %   res.Xa: a list of solution locations to place sensors
+%   res.commMST: the generated communication graph
 %   res.F: sensing quality of the solution
 %   res.M: maintenance cost of the solution
+%   res.pred: the predecessors of each node
+
 addpath('./mlibs/');
 addpath('./lldistkm/');
 addpath('./gp/');
@@ -60,12 +63,11 @@ for p = 1:params.n_V
     end
 end
 
-% first create an information matrix based on all of the sensors, choose
+%% create an information matrix based on all of the sensors, choose
 % the two with biggest benefit-cost ratio as the base case
 I = zeros(params.n_V);
 for p = 1:params.n_V
     for q = p+1:params.n_V
-        dist = D(p, q); % get the denominator
         
         % calculate F(C1UC2)
         Xa_idx = zeros(n_V, 1);
@@ -97,25 +99,28 @@ for p = 1:params.n_V
             fUse = f2;
         end
         
-        numerator = fTotal - fUse;
+        numerator = fTotal - fUse; % get the numerator
+        dist = D(p, q); % get the denominator
         I(p, q) = numerator / dist;
         I(q, p) = I(p, q);
     end
 end
 
-% get x and y coordinate for the biggest gain
+% get valid x and y coordinates for the biggest gain
 M = 0.0; % largest element
 K = [0, 0]; % index storing largest element
 x = 0.0; % x-coordinate
 y = 0.0; % y-coordinate
 
+% continuously selecting biggest gain from the matrix; if not valid, set
+% to -inf and select the next biggest gain from the matrix until valid
 while true
-    [M, K] = max(I(:));
-    [x, y] = ind2sub(size(I),K);
+    [M, K] = max(I(:)); % M: largest element; K: coordinate
+    [x, y] = ind2sub(size(I),K); % get x and y coordinates of largest element
     if valid_idx(x) == 1 && valid_idx(y) == 1 % check valid
         break
     else
-        I(x, y) = -inf;
+        I(x, y) = -inf; % not valid, set to -inf and start next round of selection
     end
 end
 
@@ -130,7 +135,7 @@ cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
 lastF = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
             cov_Xa_cur, params.K);
 
-% start the greedy selection until satisfy the quota or m_A
+%% start the greedy selection until satisfy the quota or m_A
 cnt = 2;                    % the number of current selected sensors 
 while true
     % print all valid indexes in this round
@@ -148,7 +153,6 @@ while true
     maxRes_idx = -1;    % the index of the best selection
     % lastF: sensing quality in the last round
     
-    %for j = 1:length(valid_idx)
     for j = 1:n_V
         if valid_idx(j) == 1 && Xa_idx(j) == 0 % not select before
             % try to add this index to Xa
@@ -246,7 +250,7 @@ while true
     cnt = cnt + 1;
     
     % break the loop
-    if cnt >= params.m_A
+    if lastF >= params.Q || cnt >= params.m_A
         break;
     end
 end
@@ -258,6 +262,8 @@ MST_idx = logical(vertcat(Xa_idx, [1]));
 res.commMST = commMST(MST_idx, MST_idx);
 % pass the final results
 res.F = lastF;
+% pass the predecossors
+res.pred = predMST;
 
 % calculate maintenance cost
 % predict the ambient temperature at Xv in Celsius
