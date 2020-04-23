@@ -7,7 +7,7 @@ Test environment: MATLAB R2019b/R2020a.
 
 **Note:** Need the Curve Fitting Toolbox for the `fit` function.  Need the Bioinformatics Toolbox for the `graphminspantree` function.
 
-The `tutorial.m` will walk you through all of our algorithms on the basic dataset.
+The `tutorial.m` will walk you through all of our algorithms on the small dataset.
 
 ## File Structure
 
@@ -19,9 +19,9 @@ The `tutorial.m` will walk you through all of our algorithms on the basic datase
 ├── alg           // our algorithms
 ├── data-large    // large dataset around LA after preprocess
 ├── data-small    // small dataset around SD after preprocess
-├── exp						// scripts to run experiments
+├── exp			  // scripts to run experiments
 ├── gp            // sensing quality library based on Gaussian Process
-├── libs					// general library
+├── libs		  // general library
 ├── lldistkm      // distance calculation library from FileExchange
 ├── mlibs         // maintenance cost library
 └── tutorial.m
