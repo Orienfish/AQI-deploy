@@ -19,9 +19,9 @@ The `tutorial.m` will walk you through all of our algorithms on the small datase
 ├── alg           // our algorithms
 ├── data-large    // large dataset around LA after preprocess
 ├── data-small    // small dataset around SD after preprocess
-├── exp			  // scripts to run experiments
+├── exp           // scripts to run experiments
 ├── gp            // sensing quality library based on Gaussian Process
-├── libs		  // general library
+├── libs          // general library
 ├── lldistkm      // distance calculation library from FileExchange
 ├── mlibs         // maintenance cost library
 └── tutorial.m
