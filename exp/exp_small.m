@@ -302,6 +302,7 @@ if run.PSO
         PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
         PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
         PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
+        PSOparams.thres = 1000;                  % penalty threshold in initialzation
 
         tic
         resPSO = PSO(Qparams, params, PSOparams);

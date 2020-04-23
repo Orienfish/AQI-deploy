@@ -23,10 +23,10 @@ thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = false;
-run.pSPIEL = false;
-run.PSO = false;
-run.ABC = false;
+run.IDSQ = true;
+run.pSPIEL = true;
+run.PSO = true;
+run.ABC = true;
 run.debugPlot = false;
 run.DWG = true;
 
@@ -205,6 +205,7 @@ if run.PSO
     PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
     PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
     PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
+    PSOparams.thres = 1000;                  % penalty threshold in initialzation
 
     tic
     resPSO = PSO(Qparams, params, PSOparams);
