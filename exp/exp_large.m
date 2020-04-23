@@ -32,9 +32,10 @@ interval = 60 * 60;                % 60 mins = 3600 secs
 
 %% pre-process
 fprintf('start pre-processing...\n');
+folder = '../data-large/';
 % get the mean, var and count of each type of data
-f_list = dir('../dataL/*Primary*.csv'); % use all primary data
-dataT_sav = '../dataL/dataT.csv';
+f_list = dir(append(folder, '*Primary*.csv')); % use all primary data
+dataT_sav = append(folder, 'dataT.csv');
 tic
 if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
@@ -76,8 +77,8 @@ fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 % We need temperature data anyway
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
 var_temp = vertcat(dataT.temp_var(:)); % var
-cov_mat_temp_sav = '../dataL/cov_mat_temp.csv';
-corr_mat_temp_sav = '../dataL/corr_mat_temp.csv';
+cov_mat_temp_sav = append(folder, 'cov_mat_temp.csv');
+corr_mat_temp_sav = append(folder, 'corr_mat_temp.csv');
 tic
 if exist(cov_mat_temp_sav, 'file') && exist(corr_mat_temp_sav, 'file')
     cov_mat_temp = readmatrix(cov_mat_temp_sav);
@@ -94,8 +95,8 @@ toc
 if strcmp(target, 'pm2_5')
 mean_target = vertcat(dataT.pm2_5_avg(:)); % mean
 var_target = vertcat(dataT.pm2_5_var(:)); % var
-cov_mat_target_sav = '../dataL/cov_mat_pm2_5.csv';
-corr_mat_target_sav = '../dataL/corr_mat_pm2_5.csv';
+cov_mat_target_sav = append(folder, 'cov_mat_pm2_5.csv');
+corr_mat_target_sav = append(folder, 'corr_mat_pm2_5.csv');
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -119,8 +120,8 @@ end
 if strcmp(target, 'pm1')
 mean_target = vertcat(dataT.pm1_avg(:)); % mean
 var_target = vertcat(dataT.pm1_var(:)); % var
-cov_mat_target_sav = '../dataL/cov_mat_pm1.csv';
-corr_mat_target_sav = '../dataL/corr_mat_pm1.csv';
+cov_mat_target_sav = append(folder, 'cov_mat_pm1.csv');
+corr_mat_target_sav = append(folder, 'corr_mat_pm1.csv');
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -136,8 +137,8 @@ end
 if strcmp(target, 'pm10')
 mean_target = vertcat(dataT.pm10_avg(:)); % mean
 var_target = vertcat(dataT.pm10_var(:)); % var
-cov_mat_target_sav = '../dataL/cov_mat_pm10.csv';
-corr_mat_target_sav = '../dataL/corr_mat_pm10.csv';
+cov_mat_target_sav = append(folder, 'cov_mat_pm10.csv');
+corr_mat_target_sav = append(folder, 'corr_mat_pm10.csv');
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);
@@ -153,8 +154,8 @@ end
 if strcmp(target, 'humid')
 mean_target = vertcat(dataT.humid_avg(:)); % mean
 var_target = vertcat(dataT.humid_var(:)); % var
-cov_mat_target_sav = '../dataL/cov_mat_humid.csv';
-corr_mat_target_sav = '../dataL/corr_mat_humid.csv';
+cov_mat_target_sav = append(folder, 'cov_mat_humid.csv');
+corr_mat_target_sav = append(folder, 'corr_mat_humid.csv');
 tic
 if exist(cov_mat_target_sav, 'file') && exist(corr_mat_target_sav, 'file')
     cov_mat_target = readmatrix(cov_mat_target_sav);

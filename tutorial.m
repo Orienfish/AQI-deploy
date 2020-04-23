@@ -32,9 +32,10 @@ run.DWG = true;
 
 %% pre-process
 fprintf('start pre-processing...\n');
+folder = './data-small/';
 % get the mean, var and count of each type of data
-f_list = dir('./data/*Primary*.csv'); % use all primary data
-dataT_sav = './data/dataT.csv';
+f_list = dir(append(folder, '*Primary*.csv')); % use all primary data
+dataT_sav = append(folder, 'dataT.csv');
 tic
 if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
@@ -76,8 +77,8 @@ fprintf('Generate V with size %d x %d\n', n_latV, n_lonV);
 % pm2_5
 mean_pm2_5 = vertcat(dataT.pm2_5_avg(:)); % mean
 var_pm2_5 = vertcat(dataT.pm2_5_var(:)); % var
-cov_mat_pm2_5_sav = './data/cov_mat_pm2_5.csv';
-corr_mat_pm2_5_sav = './data/corr_mat_pm2_5.csv';
+cov_mat_pm2_5_sav = append(folder, 'cov_mat_pm2_5.csv');
+corr_mat_pm2_5_sav = append(folder, 'corr_mat_pm2_5.csv');
 tic
 if exist(cov_mat_pm2_5_sav, 'file') && exist(corr_mat_pm2_5_sav, 'file')
     cov_mat_pm2_5 = readmatrix(cov_mat_pm2_5_sav);
@@ -91,8 +92,8 @@ toc
 % temp
 mean_temp = vertcat(dataT.temp_avg(:)); % mean
 var_temp = vertcat(dataT.temp_var(:)); % var
-cov_mat_temp_sav = './data/cov_mat_temp.csv';
-corr_mat_temp_sav = './data/corr_mat_temp.csv';
+cov_mat_temp_sav = append(folder, 'cov_mat_temp.csv');
+corr_mat_temp_sav = append(folder, 'corr_mat_temp.csv');
 tic
 if exist(cov_mat_temp_sav, 'file') && exist(corr_mat_temp_sav, 'file')
     cov_mat_temp = readmatrix(cov_mat_temp_sav);
