@@ -35,7 +35,6 @@ Xa_idx = zeros(n_V, 1);     % init idx list for Xa to all zero
 commMST = NaN(n_V + 1);     % init a matrix for connection graph
                             % first n entries are for Qparams.Xv.
                             % A mutual-direction MST.
-predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 clusters = zeros(n_V, n_V);   % matrix storing information of clusters
                             % initially n_V by n_V matrix and each start
                             % with one cluster, gradually truncating the
@@ -43,14 +42,14 @@ clusters = zeros(n_V, n_V);   % matrix storing information of clusters
 for p = 1:n_V
     clusters(p, 1) = p;
 end
-predMST(n_V+1) = 0;         % configure the predecessor of the sink to 0
+
 for p = 1:length(valid_idx)
     % check the distance to c
     [d1km, d2km] = lldistkm(Qparams.Xv(p, :), params.c);
     if d1km < params.R
         valid_idx(p) = 1;   % add the sensor to valid list
         commMST(n_V+1, p) = d1km; % update comm. graph
-        predMST(p) = n_V+1; % update the predecessor to sink
+        commMST(p, n_V+1) = d1km;
     end
 end
 
@@ -193,6 +192,23 @@ while true
         fstIdx = fstIdx + 1; % update the index
     end
     
+    % update commMST
+    for i = 1:n_V
+        if clusters(x, i) == 0
+            break
+        end
+        for j = i:n_V
+            if clusters(y, i) == 0
+                break
+            end
+            % update
+            node1 = clusters(x, i);
+            node2 = clusters(y, i);
+            commMST(node1, node2) = dist(node1, node2);
+            commMST(node2, node1) = dist(node2, node1);
+        end
+    end
+    
     %% update D, valid_idx, sq, and I matrices accordingly
     % update D
     % update xth column and xth row
@@ -318,8 +334,6 @@ while true
     sq(y, :) = [];
     sq(:, y) = [];
     
-    numOfC = numOfC - 1;
-    
     %% check whether to end loop
     % biggest sensing quality
     M = 0.0; % largest element
@@ -344,6 +358,23 @@ while true
                 Xa_idx(currentN) = 1;
             end
         end
+        
+        % update commMST
+        for i = 1:n_V
+            if clusters(x, i) == 0
+                break
+            end
+            for j = i:n_V
+                if clusters(y, i) == 0
+                    break
+                end
+                % update
+                node1 = clusters(x, i);
+                node2 = clusters(y, i);
+                commMST(node1, node2) = dist(node2, node1);
+                commMST(node2, node1) = dist(node2, node1);
+            end
+        end
         break
     end
 end
@@ -356,6 +387,7 @@ MST_idx = logical(vertcat(Xa_idx, [1]));
 res.commMST = commMST(MST_idx, MST_idx);
 
 % pass the predecossors
+[Tree, predMST] = graphminspantree(sparse(commMST), params.n_V+1);
 res.pred = predMST;
 
 % calculate sensing quality
@@ -374,9 +406,8 @@ res.F = real(curF);
     params.K_temp);
 Tv = fah2cel(temp_mean_vd); % convert to Celsius
 
-%res.M = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
-%                commMST, predMST, false);
-res.M = 1;
+res.M = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
+                commMST, predMST, false);
 end
 
 
