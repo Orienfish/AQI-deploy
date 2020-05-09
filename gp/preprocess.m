@@ -57,7 +57,7 @@ for f_idx = 1:length(f_list)
         dataT.temp_var(f_idx) = var(array);
         dataT.temp_cnt(f_idx) = length(array);
         dataT.temp_max(f_idx) = max(array);
-        dataT.temp_min(f_idx) = min(T.Temperature_F);
+        dataT.temp_min(f_idx) = min(array);
     catch
         fprintf('File %s does not contain temperature\n', f_name);
     end
