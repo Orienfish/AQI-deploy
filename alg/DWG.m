@@ -1,5 +1,5 @@
 function [res] = DWG(Qparams, params)
-%% Greedy heuristic IDSQ to place sensors on a subset of locations.
+%% Greedy heuristic DWG to place sensors on a subset of locations.
 %
 % Args:
 %   Qparams.Xv: a list of candidate locations to choose from
@@ -40,6 +40,7 @@ dist = zeros(params.n_V);   % init a symmetric matrix for connection graph
                             % build a distance matrix based on distance 
                             % between each nodes
 nodes = Qparams.Xv;         % short-cut for the full list of nodes
+it = -1;                     % store which iteration currently is
 
 % initialize the clusters matrix
 for p = 1:n_V
@@ -111,6 +112,7 @@ end
     
 % directly begin merging process
 while true
+    it = it + 1;
     numOfC = size(clusters); % number of clusters
     numOfC = numOfC(1); % number of rows is the number of clusters
     
@@ -150,6 +152,10 @@ while true
     ret = max_val(I, valid_idx);
     x = ret.x;
     y = ret.y;
+    
+    if params.logging
+        print_log(clusters, x, y, it, n_V, I, sq, valid_idx, Qparams.Xv)
+    end
     
     % find the first index where cluster(x, idx) = 0 for the combination
     % process: add all nodes in y to x
@@ -366,4 +372,47 @@ function [gain] = cal_gain(sq, p, q, D)
     denominator = D(p, q);
     
     gain = numerator / denominator;
+end
+
+%% the function prints logging information
+function print_log(clusters, p, q, it, n_V, I, sq, valid_idx, V)
+    % p, q: two clusters that are to be combined
+    % it: which iteration it is
+    c1 = clusters(p, :);
+    c2 = clusters(q, :);
+    fprintf("Iteration %d, merging %d and %d\n", it, c1(1), c2(1));
+    fprintf("\tcluster 1:");
+    for i = 1:n_V
+        if c1(i) == 0
+            break
+        end
+        fprintf(" %d,", c1(i));
+    end
+    fprintf("\n\tcluster 2:");
+    for i = 1:n_V
+        if c2(i) == 0
+            break
+        end
+        fprintf(" %d,", c2(i));
+    end
+    
+    m = max(I(:));
+    fprintf("\n\tselected gain: %d, largest gain: %d", I(p, q), m);
+    if m > I(p, q)
+        fprintf("\n\t\tis valid? %d", valid_idx(find(I == m)));
+    end
+    fprintf("\n\tcurrent sensing quality: %d", sq(p, q));
+    
+    fprintf("\n\tselected locations after the combination: \n\t");
+    for i=1:n_V
+        node1 = clusters(p, i);
+        if node1 ~= 0
+            fprintf("[%f, %f], ", V(node1, 1), V(node1, 2));
+        end
+        node2 = clusters(q, i);
+        if node2 ~= 0
+            fprintf("[%f, %f], ", V(node2, 1), V(node2, 2));
+        end
+    end
+    fprintf("\n");
 end

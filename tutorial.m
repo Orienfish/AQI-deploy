@@ -23,10 +23,10 @@ thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = true;
-run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
+run.IDSQ = false;
+run.pSPIEL = false;
+run.PSO = false;
+run.ABC = false;
 run.debugPlot = false;
 run.DWG = true;
 
@@ -161,7 +161,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = false;                 % logging flag
+params.logging = true;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty
@@ -285,9 +285,16 @@ end
 %% call the greedy heuristic Distance-Weighted Greedy
 if run.DWG
     fprintf('Calling DWG...\n');
+    tic
     resDWG = DWG(Qparams, params);
-    plot_IDSQ(resDWG.Xa, resDWG.commMST, c);
-    fprintf('DWG: senQ: %f mainCost: %f\n', resDWG.F, resDWG.M.C);
+    toc
+    nodesDWG = vertcat(resDWG.Xa, c);
+    plot_solution(nodesDWG, resDWG.pred);
+    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
+    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
+    n = size(resDWG.Xa);
+    n = n(1);
+    fprintf('number of selected nodes: %d DWG: senQ: %f mainCost: %f\n', n, resDWG.F, resDWG.M.C);
 end
 
 %% plot functions
