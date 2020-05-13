@@ -236,7 +236,6 @@ if run.PSO
         params.logging);
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
-    A = M.batlife;
 end
 
 %% call ABC

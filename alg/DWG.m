@@ -1,4 +1,4 @@
-function [res] = DWG(Qparams, params)
+function [res] = DWG(Qparams, params, DWGparams)
 %% Greedy heuristic DWG to place sensors on a subset of locations.
 %
 % Args:
@@ -16,6 +16,8 @@ function [res] = DWG(Qparams, params)
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
 %   params.logging: logging flag
+%
+%   DWGparams.isNumPri: whether num of sensors selected is the priority
 %
 % Return:
 %   res.Xa: a list of solution locations to place sensors
@@ -109,7 +111,7 @@ for p = 1:params.n_V
         I(q, p) = g;
     end
 end
-    
+
 % directly begin merging process
 while true
     it = it + 1;
@@ -123,28 +125,29 @@ while true
         break
     end
     
-%     needbreak = 0;
-%     % check if m_A nodes have been selected
-%     for i = 1:numOfC
-%         if clusters(i, params.m_A) == 0
-%             continue
-%         end
-%         fprintf("here");
-%         % exit the loop
-%         Xa_idx = zeros(n_V, 1);
-%         for p = 1:n_V
-%             if clusters(i, p) == 0
-%                 break
-%             end
-%             Xa_idx(clusters(i, p)) = 1;
-%         end
-%         needbreak = 1;
-%         break
-%     end
-%     
-%     if needbreak == 1
-%         break
-%     end
+    if DWGparams.isNumPri == true
+        needbreak = 0;
+        % check if m_A nodes have been selected
+        for i = 1:numOfC
+            if clusters(i, params.m_A) == 0
+                continue
+            end
+            % exit the loop
+            Xa_idx = zeros(n_V, 1);
+            for p = 1:n_V
+                if clusters(i, p) == 0
+                   break
+                end
+                Xa_idx(clusters(i, p)) = 1;
+            end
+            needbreak = 1;
+            break
+        end
+
+        if needbreak == 1
+            break
+        end
+    end
 
     %% begin selection process
     % get valid x and y coordinates for the biggest gain (from matrix I,
