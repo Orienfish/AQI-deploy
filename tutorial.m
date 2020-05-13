@@ -161,7 +161,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = true;                 % logging flag
+params.logging = false;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty
@@ -236,6 +236,7 @@ if run.PSO
         params.logging);
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
+    A = M.batlife;
 end
 
 %% call ABC
@@ -285,13 +286,14 @@ end
 %% call the greedy heuristic Distance-Weighted Greedy
 if run.DWG
     fprintf('Calling DWG...\n');
+    DWGparams.isNumPri = true;
     tic
-    resDWG = DWG(Qparams, params);
+    resDWG = DWG(Qparams, params, DWGparams);
     toc
-    nodesDWG = vertcat(resDWG.Xa, c);
-    plot_solution(nodesDWG, resDWG.pred);
-    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
-    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
+%     nodesDWG = vertcat(resDWG.Xa, c);
+%     plot_solution(nodesDWG, resDWG.pred);
+%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
+%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
     n = size(resDWG.Xa);
     n = n(1);
     fprintf('number of selected nodes: %d DWG: senQ: %f mainCost: %f\n', n, resDWG.F, resDWG.M.C);
