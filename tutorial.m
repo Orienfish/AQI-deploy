@@ -23,10 +23,10 @@ thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = true;
-run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
+run.IDSQ = false;
+run.pSPIEL = false;
+run.PSO = false;
+run.ABC = false;
 run.debugPlot = false;
 run.DWG = true;
 
@@ -285,9 +285,17 @@ end
 %% call the greedy heuristic Distance-Weighted Greedy
 if run.DWG
     fprintf('Calling DWG...\n');
-    resDWG = DWG(Qparams, params);
-    plot_IDSQ(resDWG.Xa, resDWG.commMST, c);
-    fprintf('DWG: senQ: %f mainCost: %f\n', resDWG.F, resDWG.M.C);
+    DWGparams.isNumPri = true;
+    tic
+    resDWG = DWG(Qparams, params, DWGparams);
+    toc
+%     nodesDWG = vertcat(resDWG.Xa, c);
+%     plot_solution(nodesDWG, resDWG.pred);
+%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
+%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
+    n = size(resDWG.Xa);
+    n = n(1);
+    fprintf('number of selected nodes: %d DWG: senQ: %f mainCost: %f\n', n, resDWG.F, resDWG.M.C);
 end
 
 %% plot functions
