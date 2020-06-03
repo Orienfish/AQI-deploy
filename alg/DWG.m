@@ -1,5 +1,5 @@
-function [res] = DWG(Qparams, params)
-%% Greedy heuristic IDSQ to place sensors on a subset of locations.
+function [res] = DWG(Qparams, params, DWGparams)
+%% Greedy heuristic DWG to place sensors on a subset of locations.
 %
 % Args:
 %   Qparams.Xv: a list of candidate locations to choose from
@@ -17,6 +17,8 @@ function [res] = DWG(Qparams, params)
 %   params.R: communication range of the sensors in km
 %   params.logging: logging flag
 %
+%   DWGparams.isNumPri: whether num of sensors selected is the priority
+%
 % Return:
 %   res.Xa: a list of solution locations to place sensors
 %   res.commMST: the generated communication graph
@@ -30,240 +32,274 @@ addpath('./gp/');
 
 % local variables
 n_V = size(Qparams.Xv, 1);  % number of reference locations Qparams.Xv
-valid_idx = zeros(n_V, 1);  % a list of valid indexes in comm. range
+valid_idx = zeros(n_V, n_V);  % a matrix of valid indexes in comm. range
 Xa_idx = zeros(n_V, 1);     % init idx list for Xa to all zero
-lastF = 0.0;                % sensing quality in last round of greedy selection
-commMST = NaN(n_V + 1);     % init a matrix for connection graph
-                            % first n entries are for Qparams.Xv.
-                            % A mutual-direction MST.
-predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
+clusters = zeros(n_V, n_V); % matrix storing information of clusters
+                            % initially n_V by n_V matrix and each start
+                            % with one cluster, gradually truncating the
+                            % size based on merging
+dist = zeros(params.n_V);   % init a symmetric matrix for connection graph
+                            % build a distance matrix based on distance 
+                            % between each nodes
+nodes = Qparams.Xv;         % short-cut for the full list of nodes
+it = -1;                     % store which iteration currently is
 
-% get the valid indexes directly connected to the sink
-predMST(n_V+1) = 0;         % configure the predecessor of the sink to 0
-for p = 1:length(valid_idx)
-    % check the distance to c
-    [d1km, d2km] = lldistkm(Qparams.Xv(p, :), params.c);
-    if d1km < params.R
-        valid_idx(p) = 1;   % add the sensor to valid list
-        commMST(n_V+1, p) = d1km; % update comm. graph
-        predMST(p) = n_V+1; % update the predecessor to sink
-    end
+% initialize the clusters matrix
+for p = 1:n_V
+    clusters(p, 1) = p;
 end
 
-% create the undirected dist matrix for later use
-D = zeros(params.n_V); % init a symmetric matrix for connection graph
-nodes = Qparams.Xv;
+
+% traverse through all the nodes and build the distance matrix and the
+% valid_idx matrix
 for p = 1:params.n_V
     for q = p+1:params.n_V
         % check the distance to c
         [d1km, d2km] = lldistkm(nodes(p, :), nodes(q, :));
-        % update the matrix
-        D(p, q) = d1km;
-        D(q, p) = d1km;
+        % update the dist matrix
+        dist(p, q) = d1km;
+        dist(q, p) = d1km;
+        % update valid_idx matrix
+        % if the distance between two nodes is smaller than communication
+        % range, then it's valid to combine the two nodes
+        if d1km < params.R
+            valid_idx(p, q) = 1;
+            valid_idx(q, p) = 1;
+        end
     end
 end
 
-%% create an information matrix based on all of the sensors, choose
-% the two with biggest benefit-cost ratio as the base case
-I = zeros(params.n_V);
+% dist: distance matrix between each pair of nodes
+% D: distance matrix between each pair of clusters
+% originally each cluster is one node, so D == dist
+% this matrix will be modified (truncated) in the merging process
+D = dist;
+
+%% build sensing_quality matrix for later use
+% this matrix will be modified (truncated) in the merging process
+sq = zeros(params.n_V, params.n_V);
+for p = 1:params.n_V
+    % q not start from (p+1) bc need to consider the on-cluster case when
+    % calculating gain
+    for q = p:params.n_V
+        % add all nodes in those two clusters into Xa_idx
+        Xa_idx = add_to_Xa(clusters, p, q, n_V);
+        % calculate the current sensing quality
+        curF = cal_sq(Xa_idx, Qparams.Xv, Qparams.cov_vd, params.K);
+
+        % update the sensing_quality matrix
+        sq(p, q) = curF;
+        sq(q, p) = curF;
+    end
+end
+
+%% build information matrix storing gain if combining the two clusters
+% this matrix will be modified (truncated) in the merging process
+I = NaN(params.n_V, params.n_V);
 for p = 1:params.n_V
     for q = p+1:params.n_V
-        
-        % calculate F(C1UC2)
-        Xa_idx = zeros(n_V, 1);
-        Xa_idx(p) = 1;
-        Xa_idx(q) = 1;
-        Xa_cur = Qparams.Xv(logical(Xa_idx), :);
-        cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
-        fTotal = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
-            cov_Xa_cur, params.K);
-        
-        % calcualte F(C1)
-        Xa_idx(q) = 0;
-        Xa_cur = Qparams.Xv(logical(Xa_idx), :);
-        cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
-        f1 = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
-            cov_Xa_cur, params.K);
-        
-        % calcualte F(C2)
-        Xa_idx(p) = 0;
-        Xa_idx(q) = 1;
-        Xa_cur = Qparams.Xv(logical(Xa_idx), :);
-        cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
-        f2 = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
-            cov_Xa_cur, params.K);
-        
-        % min (fTotal - f(1 or 2)) => max f(i)
-        fUse = f1;
-        if f1 < f2
-            fUse = f2;
+        % skip if not valid
+        if valid_idx(p, q) == 0
+            continue
         end
         
-        numerator = fTotal - fUse; % get the numerator
-        dist = D(p, q); % get the denominator
-        I(p, q) = numerator / dist;
-        I(q, p) = I(p, q);
+        % get the gain if combining p and q
+        g = cal_gain(sq, p, q, D);
+
+        % update the matrix
+        I(p, q) = g;
+        I(q, p) = g;
     end
 end
 
-% get valid x and y coordinates for the biggest gain
-M = 0.0; % largest element
-K = [0, 0]; % index storing largest element
-x = 0.0; % x-coordinate
-y = 0.0; % y-coordinate
-
-% continuously selecting biggest gain from the matrix; if not valid, set
-% to -inf and select the next biggest gain from the matrix until valid
+% directly begin merging process
 while true
-    [M, K] = max(I(:)); % M: largest element; K: coordinate
-    [x, y] = ind2sub(size(I),K); % get x and y coordinates of largest element
-    if valid_idx(x) == 1 && valid_idx(y) == 1 % check valid
+    it = it + 1;
+    numOfC = size(clusters); % number of clusters
+    numOfC = numOfC(1); % number of rows is the number of clusters
+    
+    % check for number of clusters
+    % exit the loop if combining all nodes
+    if numOfC == 1
+        Xa_idx = ones(n_V, 1);
         break
-    else
-        I(x, y) = -inf; % not valid, set to -inf and start next round of selection
-    end
-end
-
-% reset Xa_idx
-Xa_idx = zeros(n_V, 1);
-% add the sensors to the list
-Xa_idx(x) = 1;
-Xa_idx(y) = 1;
-% getting current largest sensing quality
-Xa_cur = Qparams.Xv(logical(Xa_idx), :);
-cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
-lastF = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
-            cov_Xa_cur, params.K);
-
-%% start the greedy selection until satisfy the quota or m_A
-cnt = 2;                    % the number of current selected sensors 
-while true
-    % print all valid indexes in this round
-    if params.logging
-        fprintf('valid indexes in round %d:\n', cnt);
-        for q = 1:length(valid_idx)
-            if valid_idx(q) == 1
-                fprintf('%d ', q);
-            end
-        end
-        fprintf('\n');
     end
     
-    maxRes = -Inf;      % max result during searching
-    maxRes_idx = -1;    % the index of the best selection
-    % lastF: sensing quality in the last round
-    
-    for j = 1:n_V
-        if valid_idx(j) == 1 && Xa_idx(j) == 0 % not select before
-            % try to add this index to Xa
-            Xa_idx(j) = 1;
-            
-            % calculate the current sensing quality (F(C1UC2))
-            Xa_cur = Qparams.Xv(logical(Xa_idx), :);
-            cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
-            curF = sense_quality(Qparams.Xv, Qparams.cov_vd, Xa_cur, ...
-                cov_Xa_cur, params.K);
-            curF = real(curF); % take the real part
-            
-            % calculate numerator
-            % same logic as before: C1: selected cluster; C2: new node
-            % F(C2)
-            temp = zeros(n_V, 1);
-            temp(j) = 1;
-            temp_cur = Qparams.Xv(logical(temp), :);
-            temp_cov = Qparams.cov_vd(logical(temp), logical(temp));
-            nodeF = sense_quality(Qparams.Xv, Qparams.cov_vd, temp_cur, ...
-                        temp_cov, params.K);
-            nodeF = real(nodeF);
-                    
-            usedF = nodeF;
-            if nodeF < lastF
-                usedF = lastF;
-            end
-            
-            numerator = curF - usedF;
-            
-            % calculate denominator
-            % define the location of the cluster as the middle point
-            % get the location of the current cluster
-            totX = 0.0;
-            totY = 0.0;
-            for index = 1:n_V
-                if Xa_idx(index) == 1 % selected points
-                    if index ~= j
-                        currentN = nodes(index, :);
-                        totX = totX + currentN(1);
-                        totY = totY + currentN(2);
-                    end
-                end
-            end
-
-            % get location of the cluster
-            aveX = totX / cnt;
-            aveY = totY / cnt;
-            loc = [aveX aveY];
-            % get distance
-            [d1km, d2km] = lldistkm(loc, nodes(j, :));
-            distance = d1km;
-            
-            % get gain
-            curRes = numerator / distance;
-            
-            % compare and update
-            if curRes > maxRes
-                maxRes = curRes;
-                maxRes_idx = j;
-            end
-            
-            % reset the Xa index
-            Xa_idx(j) = 0;
-        end
-    end
-    
-    % update the greedy selection
-    if maxRes > -Inf
-        Xa_idx(maxRes_idx) = 1; % add the sensors to the list
-        lastF = maxRes;
-        if params.logging
-            fprintf('The selection in round %d is %d, senQ: %f\n', ...
-                cnt, maxRes_idx, lastF);
-        end
-        
-        % update the valid indexes
-        for k = 1:length(valid_idx)
-            if valid_idx(k) == 1 % if is already valid, skip
+    if DWGparams.isNumPri == true
+        needbreak = 0;
+        % check if m_A nodes have been selected
+        for i = 1:numOfC
+            if clusters(i, params.m_A) == 0
                 continue
             end
-        
-            % check the distance to the selected sensor in this round
-            [d1km, d2km] = lldistkm(Qparams.Xv(k, :), Qparams.Xv(maxRes_idx, :));
-            if d1km < params.R
-                valid_idx(k) = 1; % add the sensor to valid list
-                commMST(maxRes_idx, k) = d1km; % update comm. graph
-                predMST(k) = maxRes_idx; % update the predecessor
+            % exit the loop
+            Xa_idx = zeros(n_V, 1);
+            for p = 1:n_V
+                if clusters(i, p) == 0
+                   break
+                end
+                Xa_idx(clusters(i, p)) = 1;
             end
+            needbreak = 1;
+            break
         end
-    else
-        error('No valid indexes to select!');
+
+        if needbreak == 1
+            break
+        end
+    end
+
+    %% begin selection process
+    % get valid x and y coordinates for the biggest gain (from matrix I,
+    % information)
+    ret = max_val(I, valid_idx);
+    x = ret.x;
+    y = ret.y;
+    
+    if params.logging
+        print_log(clusters, x, y, it, n_V, I, sq, valid_idx, Qparams.Xv)
     end
     
-    cnt = cnt + 1;
+    % find the first index where cluster(x, idx) = 0 for the combination
+    % process: add all nodes in y to x
+    fstIdx = 0;
+    for i = 1:n_V
+        if clusters(x, i) == 0
+            fstIdx = i;
+            break
+        end
+    end
     
-    % break the loop
-    if lastF >= params.Q || cnt >= params.m_A
-        break;
+    % put all nodes in y into x
+    for i = 1:n_V
+        % traversing all elements in y
+        if clusters(y, i) == 0
+            break
+        end
+        node = clusters(y, i);
+        clusters(x, fstIdx) = node;
+        fstIdx = fstIdx + 1; % update the index
+    end
+    
+    %% update D, valid_idx, sq, and I matrices accordingly
+    % D: matrix storing distance between clusters
+    % sq: matrix storing sensing quality of the two clusters
+    % I: matrix storing information (gain) of the two clusters
+    
+    % update D and valid_idx
+    % update xth column and xth row
+    for p = 1:numOfC
+        if p == y
+            continue
+        end
+        % shortest distance between two clusters
+        minD = Inf;
+        for i = 1:n_V
+            % if reaching zero, it's the end of this cluster
+            if clusters(x, i) == 0
+                break
+            end
+            for j = 1:n_V
+                % same logic: reaching 0 == reaching the end of this
+                % cluster
+                if clusters(p, j) == 0
+                    break
+                end
+                % update minD if needed
+                n1 = clusters(x, i);
+                n2 = clusters(p, j);
+                if dist(n1, n2) < minD
+                    minD = dist(n1, n2);
+                end
+            end
+        end
+        % after finding minD, update
+        D(x, p) = minD;
+        D(p, x) = minD;
+        
+        % update valid_idx
+        if minD < params.R
+            valid_idx(p, x) = 1;
+            valid_idx(x, p) = 1;
+        end
+    end
+    
+    % update sensing quality
+    % update xth column and xth row
+    for p = 1:numOfC
+        if p == y
+            continue
+        end
+        % add all nodes in those two clusters into Xa_idx
+        Xa_idx = add_to_Xa(clusters, p, x, n_V);
+        % calculate the current sensing quality
+        curF = cal_sq(Xa_idx, Qparams.Xv, Qparams.cov_vd, params.K);
+
+        sq(p, x) = curF;
+        sq(x, p) = curF;
+    end
+    
+    % update information matrix
+    % update xth column and xth row
+    for p = 1:numOfC
+        if p == y
+            continue
+        end
+        % skip if not valid
+        if valid_idx(p, x) == 0
+            continue
+        end
+        
+        % get the gain if combining p and x
+        g = cal_gain(sq, p, x, D);
+        
+        I(p, x) = g;
+        I(x, p) = g;
+    end
+    
+    % delete yth row in clusters
+    clusters(y, :) = [];
+    % delete yth column and yth row in valid_idx
+    valid_idx(y, :) = [];
+    valid_idx(:, y) = [];
+    % delete yth column and yth row in D (distance matrix of clusters)
+    D(y, :) = [];
+    D(:, y) = [];
+    % delete yth column and yth row in I (gain matrix)
+    I(y, :) = [];
+    I(:, y) = [];
+    % delete yth column and yth row in sq (sensing quality matrix)
+    sq(y, :) = [];
+    sq(:, y) = [];
+    
+    %% check whether to end loop
+    % biggest sensing quality
+    ret = max_val(sq, valid_idx);
+    M = ret.M;
+    
+    % if reaching the quota, exit the loop
+    if M >= params.Q
+        % update selectd nodes
+        x = ret.x;
+        y = ret.y;
+        Xa_idx = add_to_Xa(clusters, x, y, n_V);
+        break
     end
 end
 
-% return the final selection solution
+
+%% return values
 res.Xa = Qparams.Xv(logical(Xa_idx), :);
 % pass only the MST of selected sensors
-MST_idx = logical(vertcat(Xa_idx, [1]));
-res.commMST = commMST(MST_idx, MST_idx);
-% pass the final results
-res.F = lastF;
+[G, predMST] = MST(res.Xa, params.c, params.R);
+res.commMST = G;
+commMST = G;
+
 % pass the predecossors
 res.pred = predMST;
+
+% calculate sensing quality
+res.F = cal_sq(Xa_idx, Qparams.Xv, Qparams.cov_vd, params.K);
 
 % calculate maintenance cost
 % predict the ambient temperature at Xv in Celsius
@@ -271,7 +307,115 @@ res.pred = predMST;
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
 Tv = fah2cel(temp_mean_vd); % convert to Celsius
-res.M = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
+
+res.M = maintain_cost(res.Xa, Tv, ~isnan(predMST), ...
                 commMST, predMST, false);
 end
 
+%% the function to calculate sensing quality based on Xa_idx
+function [curF] = cal_sq(Xa_idx, Xv, cov_vd, K)
+    X_remain = Xv(~Xa_idx, :);
+    cov_remain = cov_vd(~Xa_idx, ~Xa_idx);
+    Xa_cur = Xv(logical(Xa_idx), :);
+    cov_Xa_cur = cov_vd(logical(Xa_idx), logical(Xa_idx));
+    curF = sense_quality(X_remain, cov_remain, Xa_cur, cov_Xa_cur, K);
+    curF = real(curF); % take the real part
+end
+
+%% the function finds the max element in the matrix and also returns the index
+function [ret] = max_val(matrix, valid_idx)
+    % x: x coordinate of max element
+    % y: y coordinate of max element
+    % M: largest element
+    [M, K] = max(matrix(logical(valid_idx))); % M: largest element; K: coordinate
+    K = find(matrix == M);
+    K = K(1);
+    [x, y] = ind2sub(size(matrix), K); % get x and y coordinates of largest element
+    ret.x = x;
+    ret.y = y;
+    ret.M = M;
+end
+
+%% the function adds nodes to Xa_idx and returns the new Xa_idx
+function [Xa] = add_to_Xa(clusters, p, q, n_V)
+    Xa_idx = zeros(n_V, 1);
+    for i = 1:n_V
+        % add to Xa_idx if not reaching 0
+        if clusters(p, i) ~= 0
+            currentN = clusters(p, i);
+            Xa_idx(currentN) = 1;
+        end
+        if clusters(q, i) ~= 0
+            currentN = clusters(q, i);
+            Xa_idx(currentN) = 1;
+        end
+    end
+    Xa = Xa_idx;
+end
+
+%% the function calculates gain
+function [gain] = cal_gain(sq, p, q, D)
+    % calculate numerator: F(C1 U C2) - max(F(Ci))
+    % get fTotal: F(C1 U C2)
+    fTotal = sq(p, q);
+
+    % get F(C1) and F(C2)
+    f1 = sq(p, p);
+    f2 = sq(q, q);
+    % get second part: max F(Ci)
+    sndP = f1;
+    if f2 > f1
+        sndP = f2;
+    end
+
+    % get numerator
+    numerator = fTotal - sndP;
+
+    % get denominator, the distance between those two clusters
+    denominator = D(p, q);
+    
+    gain = numerator / denominator;
+end
+
+%% the function prints logging information
+function print_log(clusters, p, q, it, n_V, I, sq, valid_idx, V)
+    % p, q: two clusters that are to be combined
+    % it: which iteration it is
+    c1 = clusters(p, :);
+    c2 = clusters(q, :);
+    fprintf("Iteration %d, merging %d and %d\n", it, c1(1), c2(1));
+    fprintf("\tcluster 1:");
+    for i = 1:n_V
+        if c1(i) == 0
+            break
+        end
+        fprintf(" %d,", c1(i));
+    end
+    fprintf("\n\tcluster 2:");
+    for i = 1:n_V
+        if c2(i) == 0
+            break
+        end
+        fprintf(" %d,", c2(i));
+    end
+    
+    m = max(I(:));
+    fprintf("\n\tselected gain: %d, largest gain: %d", I(p, q), m);
+    if m > I(p, q)
+        fprintf("\n\t\tis valid? %d", valid_idx(find(I == m)));
+    end
+    fprintf("\n\tcurrent sensing quality: %d", sq(p, q));
+    
+    fprintf("\n\tselected locations after the combination: \n\t");
+    for i=1:n_V
+        node1 = clusters(p, i);
+        if node1 ~= 0
+            fprintf("[%f, %f], ", V(node1, 1), V(node1, 2));
+        end
+        node2 = clusters(q, i);
+        if node2 ~= 0
+            fprintf("[%f, %f], ", V(node2, 1), V(node2, 2));
+        end
+    end
+    fprintf("\n");
+end
