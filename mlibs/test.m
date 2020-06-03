@@ -27,29 +27,30 @@ Tcore = zeros(n_amb2core, iter);
 for i = 1:n_amb2core
     Tcore(i, 1) = Tamb(i);
     for j = 2:iter
-        Tcore(i, j) = temp_amb2core(Tamb(i), 1.0, Tcore(i, j-1));
+        Tcore(i, j) = amb2core(Tamb(i), 1.0, Tcore(i, j-1));
     end
 end
 figure(2);
 for i = 1:n_amb2core
-    plot(Tcore(i, :));
+    plot(Tcore(i, :), 'DisplayName', string(Tamb(i))+'°C');
     hold on;
 end
+legend();
 title('Core temperature under various ambient temperature');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% test MTTF_TDDB under various temperature and power
+% test MTTF_RATIO under various temperature and power
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 n_mttftemp = 41;
 Tc = linspace(0, 100, n_mttftemp); % core temperature in Celsius
 n_pwr = 4;
 MTTF = zeros(1, n_mttftemp);
 for i = 1:n_mttftemp
-    MTTF(i) = mttf_tddb(Tc(i) + 273.15); % convert to Kelvin
+    MTTF(i) = mttf_ratio(Tc(i) + 273.15); % convert to Kelvin
 end
 figure(3);
 plot(Tc, MTTF);
-title('MTTF of TDDB under various core temperature');
+title('MTTF ratio under various core temperature');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test transmission power consumption under different distance
@@ -97,7 +98,7 @@ for k = 1:n_amb
         [stbPwr, stbTc] = stbPower(params, Tamb(k));
         
         avgPwr(k, i) = stbPwr;
-        MTTF_dist(k, i) = mttf_tddb(stbTc);
+        MTTF_dist(k, i) = mttf_ratio(stbTc);
         
         % convert from W to mW then calculate average current draw
         I_mA = stbPwr * 1000 / params.Vdd; 
@@ -107,19 +108,22 @@ for k = 1:n_amb
 end
 figure(5);
 for k = 1:n_amb
-    plot(dist, avgPwr(k, :));
+    plot(dist, avgPwr(k, :), 'DisplayName', string(Tamb(k))+'°C');
     hold on;
 end
+legend();
 title('Average total power under various distance and ambient temperature');
 figure(6);
 for k = 1:n_amb
-    plot(dist, MTTF_dist(k, :));
+    plot(dist, MTTF_dist(k, :), 'DisplayName', string(Tamb(k))+'°C');
     hold on;
 end
-title('Average tddb lifetime under various distance and ambient temperature');
+legend();
+title('Average MTTF ratio under various distance and ambient temperature');
 figure(7);
 for k = 1:n_amb
-    plot(dist, batlife_dist(k, :));
+    plot(dist, batlife_dist(k, :), 'DisplayName', string(Tamb(k))+'°C');
     hold on;
 end
+legend();
 title('Average battery lifetime under various distance and ambient temperature');

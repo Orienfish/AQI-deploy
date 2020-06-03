@@ -1,9 +1,9 @@
-function [Tcore] = temp_amb2core(Tamb, pwr, Tcore_last)
+function [Tcore] = amb2core(Tamb, pwr, Tcore_last)
 % Iteratively calculate the ambient temperature for next time stamp.
 % Args:
 %   Tamb: ambient temperature in Celsius
 %   pwr: average power in W
-%   Tcore_last: the core temperature in last time stamp in Kelvin? Celsius?
+%   Tcore_last: the core temperature in last time stamp in Celsius
 %
 % Return:
 %   Tcore: core processor temperature in Celsius

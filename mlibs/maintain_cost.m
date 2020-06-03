@@ -68,7 +68,7 @@ for i = 1:size(Xa, 1)
         % estimate circuit lifetime in days
         %cirlife_year = mttf_tddb(stbTc);
         %cirlife_day = cirlife_year * 365;
-        cirlife_day = mttf_tddb(stbTc);
+        cirlife_day = mttf_ratio(stbTc);
         
         % update total maintenance cost
         nodeC = c_bat / batlife_day + c_node / cirlife_day;

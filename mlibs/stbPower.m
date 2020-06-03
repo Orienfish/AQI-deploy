@@ -23,7 +23,7 @@ eps = 1e-1;       % error bound in the iteration
 iter = 0;
 while 1
     curPwr = getPower(params, Tc_old + 273.15);
-    Tc_new = temp_amb2core(Tamb, curPwr, Tc_old);
+    Tc_new = amb2core(Tamb, curPwr, Tc_old);
     if Tc_new - Tc_old < eps
         break
     end
