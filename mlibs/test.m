@@ -9,12 +9,11 @@ n_bat = 10;
 temp = linspace(-5, 40, n_bat);
 batlife = zeros(1, n_bat);
 for i = 1:n_bat
-    batlife(i) = bat_lifetime(750, temp(i), 40, 0.1);
+    batlife(i) = bat_ratio(750, temp(i), 40, 0.1);
 end
 figure(1);
 plot(temp, batlife);
 title('Estimated battery time under various ambient temperature');
-ylim([17 18.5]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test ambient temperature to core temperature conversion function
@@ -102,7 +101,7 @@ for k = 1:n_amb
         
         % convert from W to mW then calculate average current draw
         I_mA = stbPwr * 1000 / params.Vdd; 
-        batlife_h = bat_lifetime(cap_bat, Tamb(k), I_mA, dt_bat_h);
+        batlife_h = bat_ratio(cap_bat, Tamb(k), I_mA, dt_bat_h);
         batlife_dist(k, i) = batlife_h;
     end
 end

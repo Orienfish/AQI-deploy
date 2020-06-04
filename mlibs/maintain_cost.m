@@ -30,7 +30,7 @@ params.Vdd = 3.3;        % 3.3v supply voltage
 
 % settings for battery
 cap_bat = 20000;   % initial battery capacity in mAh
-dt_bat_h = 1;     % time resolution of battery in hours
+dt_bat_h = 1;      % time resolution of battery in hours
 c_bat = 10;        % cost to replace battery
 
 % setting for circuit
@@ -62,16 +62,13 @@ for i = 1:size(Xa, 1)
 
         % estimate battery lifetime in days
         I_mA = stbPwr * 1000 / params.Vdd; % convert from W to mW then calculate average current draw
-        batlife_h = bat_lifetime(cap_bat, Ta(i), I_mA, dt_bat_h);
-        batlife_day = batlife_h / 24;
+        batlife_ratio = bat_ratio(cap_bat, Ta(i), I_mA, dt_bat_h);
 
         % estimate circuit lifetime in days
-        %cirlife_year = mttf_tddb(stbTc);
-        %cirlife_day = cirlife_year * 365;
-        cirlife_day = mttf_ratio(stbTc);
+        cirlife_ratio = mttf_ratio(stbTc);
         
         % update total maintenance cost
-        nodeC = c_bat / batlife_day + c_node / cirlife_day;
+        nodeC = c_bat / batlife_ratio + c_node / cirlife_ratio;
         C = C + nodeC;
         
         % update output list
