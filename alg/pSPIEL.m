@@ -133,7 +133,7 @@ Tv = fah2cel(temp_mean_vd);  % convert to Celsius
 
 % update the sensing quality and maintenance cost
 out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);
-out.M = maintain_cost(Qparams.Xv, Tv, connected, G, pred, false); % one-to-one match
+out.M = maintain_cost(Qparams.Xv, Tv, connected, G, pred, params.logging); % one-to-one match
 out.Position = Qparams.Xv;
 out.pred = pred;
 out.connected = connected;

@@ -24,11 +24,11 @@ interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
 run.IDSQ = false;
-run.pSPIEL = false;
+run.pSPIEL = true;
 run.PSO = false;
 run.ABC = false;
-run.debugPlot = false;
-run.DWG = true;
+run.debugPlot = true;
+run.DWG = false;
 
 %% pre-process
 fprintf('start pre-processing...\n');
@@ -161,7 +161,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = false;                 % logging flag
+params.logging = true;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty

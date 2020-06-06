@@ -27,6 +27,8 @@ params.tsen = 0.3;       % 300ms sensing time
 params.T = 10;           % 10s sampling frequency
 params.f = 300e6;        % 300MHz clock frequency
 params.Vdd = 3.3;        % 3.3v supply voltage
+params.Iref = 50;        % 50mA reference current draw
+params.Pref = params.Vdd * params.Iref / 1000; % reference power in W
 
 % settings for battery
 cap_bat = 20000;   % initial battery capacity in mAh
@@ -34,8 +36,8 @@ dt_bat_h = 1;      % time resolution of battery in hours
 c_bat = 10;        % cost to replace battery
 
 % setting for circuit
-c_node = 100;     % cost to replace node
-C = 0;            % total maintenance cost
+c_node = 100;      % cost to replace node
+C = 0;             % total maintenance cost
 
 % init return lifetime list
 out.batlife = zeros(size(Xa, 1), 1);
@@ -72,14 +74,14 @@ for i = 1:size(Xa, 1)
         C = C + nodeC;
         
         % update output list
-        out.batlife(i) = batlife_day;
-        out.cirlife(i) = cirlife_day;
+        out.batlife(i) = batlife_ratio;
+        out.cirlife(i) = cirlife_ratio;
 
         if logging
             fprintf('  node %d amb temp: %f avg pwr: %f core temp: %f\n', ...
                 i, Ta(i), stbPwr, stbTc);
             fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
-                batlife_day, cirlife_day, nodeC);
+                batlife_ratio, cirlife_ratio, nodeC);
         end
     end
 end

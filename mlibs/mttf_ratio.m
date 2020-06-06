@@ -29,8 +29,9 @@ c = 10 * 1.1949e3 / (6.022 * 1.38);  % Ea/k
 %end
 %Tcref = Tc_new;
 %fprintf('Tcref in Celsius: %f\n', Tcref);
-Tcref = 33.010122 + 273.15; % core temperature reference in Kelvin obtained from 
-                     % the code above
+
+% core temperature reference in Kelvin obtained from the code above
+Tcref = 33.010122 + 273.15; 
 
 MTTFr = exp(c ./ Tc) / exp(c / Tcref);
 %fprintf("%f\n", MTTFr);
