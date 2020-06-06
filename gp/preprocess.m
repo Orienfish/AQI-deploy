@@ -158,6 +158,7 @@ for f_idx = 1:length(f_list)
         fprintf('File %s does not contain pm10\n', f_name);
     end
 end
+legend({'Location A', 'Location B'}, 'FontSize', 16, 'Location', 'southeast');
 ax = gca; ax.FontSize=16;
 xlim([0, 40]);
 xlabel('Temperature (°C)'); ylabel('Cumulative Probability');
