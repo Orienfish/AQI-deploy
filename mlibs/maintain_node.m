@@ -25,7 +25,7 @@ for j = 1:params.nbins
     % convert from W to mW then calculate average current draw
     I_mA = stbPwr * 1000 / params.Vdd;
     batlife_cur = bat_ratio(params.cap_bat, curCenters(j), I_mA, params.dt_bat_h);
-
+    
     % estimate circuit lifetime in ratio
     cirlife_cur = mttf_ratio(stbTc);
 

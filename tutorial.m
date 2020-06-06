@@ -21,13 +21,15 @@ sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
 thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
+N_bin = 10;                        % number of bins to approximate ambient
+                                   % temperature distribution
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = true;
-run.pSPIEL = true;
-run.PSO = true;
-run.ABC = true;
-run.debugPlot = true;
+run.IDSQ = false;
+run.pSPIEL = false;
+run.PSO = false;
+run.ABC = false;
+run.debugPlot = false;
 run.DWG = false;
 
 %% pre-process
@@ -41,7 +43,7 @@ if exist(dataT_sav, 'file')
     dataT = readtable(dataT_sav);
 else
     % if no file exists yet, do pre-process and save it to file
-    dataT = preprocess(f_list, dataT_sav, thres);
+    dataT = preprocess(f_list, dataT_sav, thres, N_bin);
 end
 toc
 
