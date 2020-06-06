@@ -29,6 +29,7 @@ varTypes = {'string', 'double', 'double', 'int32', ...
             'double', 'double', 'int32', 'double', 'double'};
 dataT = table('Size', [length(f_list) length(varNames)], ...
               'VariableTypes', varTypes, 'VariableNames', varNames);
+figure('Position', [0 0 500 375]);
 
 for f_idx = 1:length(f_list)
     % obtain the list of data files
