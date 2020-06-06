@@ -18,7 +18,7 @@ function [out] = pSPIEL(Qparams, params)
 %   params.m_A: number of sensors to deploy
 %   params.Q: sensing quality quota
 %   params.K: the fitted RBF kernel function
-%   parmas.K_temp: the fitted RBF kernel function for temperature
+%   params.K_temp: the fitted RBF kernel function for temperature
 %   params.c: position of the sink in [lat lon]
 %   params.R: communication range of the sensors in km
 %   params.penalty: penalty for non-connected nodes
@@ -130,10 +130,11 @@ cov_Xa_remain = Qparams.cov_vd(~connected, ~connected);
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
+Tv_v = (5/9) * abs(diag(temp_cov_vd)) * 5;
 
 % update the sensing quality and maintenance cost
 out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);
-out.M = maintain_cost(Qparams.Xv, Tv, connected, G, pred, params.logging); % one-to-one match
+out.M = maintain_cost(Qparams.Xv, Tv, Tv_v, connected, G, pred, params.logging); % one-to-one match
 out.Position = Qparams.Xv;
 out.pred = pred;
 out.connected = connected;

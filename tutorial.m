@@ -15,7 +15,7 @@ diary 'log.txt';
 % V - reference locations
 % A - deployment plan
 m_A = 16;                          % number of sensors to place
-Q = 10.0;                          % sensing quality quota
+Q = 40.0;                          % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
@@ -55,7 +55,7 @@ bound.latUpper = max(D_lat);
 bound.latLower = min(D_lat);
 bound.lonUpper = max(D_lon);
 bound.lonLower = min(D_lon);
-gridUnit = 0.05; % adjustable
+gridUnit = 0.02; % adjustable
 c = [(bound.latUpper + bound.latLower) / 2, (bound.lonUpper + bound.lonLower) / 2]; % sink position
 n_latV = floor((bound.latUpper - bound.latLower) / gridUnit);
 n_lonV = floor((bound.lonUpper - bound.lonLower) / gridUnit);
@@ -171,9 +171,12 @@ params.penalty = 100;                   % penalty for non-connected nodes
 if run.IDSQ
     fprintf('Calling IDSQ...\n');
     IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
+    tic
     resIDSQ = IDSQ(Qparams, params, IDSQparams);
+    resIDSQ.time = toc;
     plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-    fprintf('IDSQ: senQ: %f mainCost: %f\n', resIDSQ.F, resIDSQ.M.C);
+    fprintf('IDSQ: senQ: %f mainCost: %f time: %f\n', ...
+        resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
 end
 
 %% call pSPIEL
@@ -181,9 +184,9 @@ if run.pSPIEL
     fprintf('Calling pSPIEL...\n');
     tic
     respSPIEL = pSPIEL(Qparams, params);
-    toc
-    fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f\n', ...
-        sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C);
+    respSPIEL.time = toc;
+    fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+        sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C, respSPIEL.time);
     nodespSPIEL = vertcat(respSPIEL.Position, c);
     plot_solution(nodespSPIEL, respSPIEL.pred);
     bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
@@ -210,7 +213,7 @@ if run.PSO
 
     tic
     resPSO = PSO(Qparams, params, PSOparams);
-    toc
+    resPSO.time = toc;
     
     % plot the BestCosts curve
     figure();
@@ -254,7 +257,7 @@ if run.ABC
 
     tic
     resABC = ABC(Qparams, params, ABCparams);
-    toc
+    resABC.time = toc;
     
     % plot the BestCosts curve
     figure();
@@ -288,14 +291,15 @@ if run.DWG
     DWGparams.isNumPri = true;
     tic
     resDWG = DWG(Qparams, params, DWGparams);
-    toc
-%     nodesDWG = vertcat(resDWG.Xa, c);
-%     plot_solution(nodesDWG, resDWG.pred);
-%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
-%     bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
+    resDWG.time = toc;
+    nodesDWG = vertcat(resDWG.Xa, c);
+    plot_solution(nodesDWG, resDWG.pred);
+    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.batlife, '');
+    bubbleplot_wsize(resDWG.Xa(:, 1), resDWG.Xa(:, 2), resDWG.M.cirlife, '');
     n = size(resDWG.Xa);
     n = n(1);
-    fprintf('number of selected nodes: %d DWG: senQ: %f mainCost: %f\n', n, resDWG.F, resDWG.M.C);
+    fprintf('number of selected nodes: %d DWG: senQ: %f mainCost: %f time: %f\n', ...
+        n, resDWG.F, resDWG.M.C, resDWG.time);
 end
 
 %% plot functions

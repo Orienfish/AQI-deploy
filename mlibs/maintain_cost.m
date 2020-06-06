@@ -1,10 +1,11 @@
-function [out] = maintain_cost(Xa, Ta, conn_idx, commMST, predMST, logging)
+function [out] = maintain_cost(Xa, Ta, Ta_v, conn_idx, commMST, predMST, logging)
 %% Compute the maintenance cost from a given deployment.
 %  Note deployment Xa is a complete list. Not all nodes are connected.
 %
 % Args:
 %   Xa: a given deployment list, [lat lon]
-%   Ta: average temperature estimation at Xa in Celsius 
+%   Ta: average temperature estimation at Xa in Celsius
+%   Ta_v: variance of ambient temperature at Xa
 %   conn_idx: list of logical variables showing connection
 %   commMST: generated feasible MST for connnection
 %   predMST: the predecessor of the node
@@ -29,6 +30,7 @@ params.f = 300e6;        % 300MHz clock frequency
 params.Vdd = 3.3;        % 3.3v supply voltage
 params.Iref = 50;        % 50mA reference current draw
 params.Pref = params.Vdd * params.Iref / 1000; % reference power in W
+params.nbins = 10;       % number of bins to deal with temperature variation
 
 % settings for battery
 cap_bat = 20000;   % initial battery capacity in mAh
@@ -46,6 +48,8 @@ out.cirlife = zeros(size(Xa, 1), 1);
 % get children cnt of each node from MST
 child_cnt = get_child_cnt(predMST);
 
+disp(Ta_v);
+
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
     if conn_idx(i) % only process those nodes that are connected
@@ -59,20 +63,39 @@ for i = 1:size(Xa, 1)
         params.Lrx = params.Lrx_init * child_cnt(i);
         % fprintf('child cnt: %d Ltx: %d Lrx: %d\n', child_cnt, params.Ltx, params.Lrx);
         
-        % estimate power in W
-        [stbPwr, stbTc] = stbPower(params, Ta(i));
-
-        % estimate battery lifetime in days
-        I_mA = stbPwr * 1000 / params.Vdd; % convert from W to mW then calculate average current draw
-        batlife_ratio = bat_ratio(cap_bat, Ta(i), I_mA, dt_bat_h);
-
-        % estimate circuit lifetime in days
-        cirlife_ratio = mttf_ratio(stbTc);
+        % deal with temperature deviation
+        % simulate temperature distribution and count the prob. in each bin
+        curCenters = linspace(Ta(i)-3*Ta_v(i), Ta(i)+3*Ta_v(i), params.nbins);
+        T_cdf = [normcdf(curCenters, Ta(i), Ta_v(i)), 1.0];
+        curProb = T_cdf(2:end) - T_cdf(1:end-1);
         
-        % update total maintenance cost
-        nodeC = c_bat / batlife_ratio + c_node / cirlife_ratio;
+        nodeC = 0.0;
+        batlife_ratio = 0.0;
+        cirlife_ratio = 0.0;
+        % sum up through temperature distribution and
+        % calculate the expected maintenance cost of the current node
+        for j = 1:params.nbins
+            % estimate power in W
+            [stbPwr, stbTc] = stbPower(params, curCenters(j));
+
+            % estimate battery lifetime in ratio
+            % convert from W to mW then calculate average current draw
+            I_mA = stbPwr * 1000 / params.Vdd;
+            batlife_cur = bat_ratio(cap_bat, curCenters(j), I_mA, dt_bat_h);
+
+            % estimate circuit lifetime in ratio
+            cirlife_cur = mttf_ratio(stbTc);
+
+            % update total maintenance cost
+            nodeCur = c_bat / batlife_cur + c_node / cirlife_cur;
+            
+            % sum up expectations
+            nodeC = nodeC + nodeCur * curProb(j);
+            batlife_ratio = batlife_ratio + batlife_cur * curProb(j);
+            cirlife_ratio = cirlife_ratio + cirlife_cur * curProb(j);
+        end
+        
         C = C + nodeC;
-        
         % update output list
         out.batlife(i) = batlife_ratio;
         out.cirlife(i) = cirlife_ratio;
@@ -83,6 +106,21 @@ for i = 1:size(Xa, 1)
             fprintf('  bat life: %f cir life: %f main cost: %f\n', ...
                 batlife_ratio, cirlife_ratio, nodeC);
         end
+        
+        % estimate power in W
+        [stbPwr, stbTc] = stbPower(params, Ta(i));
+
+        % estimate battery lifetime in ratio
+        % convert from W to mW then calculate average current draw
+        I_mA = stbPwr * 1000 / params.Vdd;
+        batlife_cur = bat_ratio(cap_bat, Ta(i), I_mA, dt_bat_h);
+
+        % estimate circuit lifetime in ratio
+        cirlife_cur = mttf_ratio(stbTc);
+
+        % update total maintenance cost
+        nodeCur = c_bat / batlife_cur + c_node / cirlife_cur;
+        fprintf('    original maintenance cost: %f\n', nodeCur);
     end
 end
 
