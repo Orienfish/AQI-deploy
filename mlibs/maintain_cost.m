@@ -33,15 +33,15 @@ params.Pref = params.Vdd * params.Iref / 1000; % reference power in W
 params.nbins = 10;       % number of bins to deal with temperature variation
 
 % settings for battery
-cap_bat = 2000;   % initial battery capacity in mAh
-dt_bat_h = 1;      % time resolution of battery in hours
-c_bat = 10;        % cost to replace battery
+params.cap_bat = 2000;   % initial battery capacity in mAh
+params.dt_bat_h = 1;     % time resolution of battery in hours
+params.c_bat = 10;       % cost to replace battery
 
 % setting for circuit
-c_node = 100;      % cost to replace node
-C = 0;             % total maintenance cost
+params.c_node = 100;     % cost to replace node
 
-% init return lifetime list
+% init return list
+out.C = 0.0;             % total maintenance cost
 out.batlife = zeros(size(Xa, 1), 1);
 out.cirlife = zeros(size(Xa, 1), 1);
 
@@ -70,34 +70,10 @@ for i = 1:size(Xa, 1)
         T_cdf = [normcdf(curCenters, Ta(i), Ta_v(i)), 1.0];
         curProb = T_cdf(2:end) - T_cdf(1:end-1);
         
-        nodeC = 0.0;
-        batlife_ratio = 0.0;
-        cirlife_ratio = 0.0;
-        % sum up through temperature distribution and
-        % calculate the expected maintenance cost of the current node
-        for j = 1:params.nbins
-            % estimate power in W
-            [stbPwr, stbTc] = stbPower(params, curCenters(j));
-
-            % estimate battery lifetime in ratio
-            % convert from W to mW then calculate average current draw
-            I_mA = stbPwr * 1000 / params.Vdd;
-            batlife_cur = bat_ratio(cap_bat, curCenters(j), I_mA, dt_bat_h);
-
-            % estimate circuit lifetime in ratio
-            cirlife_cur = mttf_ratio(stbTc);
-
-            % update total maintenance cost
-            nodeCur = c_bat / batlife_cur + c_node / cirlife_cur;
-            
-            % sum up expectations
-            nodeC = nodeC + nodeCur * curProb(j);
-            batlife_ratio = batlife_ratio + batlife_cur * curProb(j);
-            cirlife_ratio = cirlife_ratio + cirlife_cur * curProb(j);
-        end
-        
-        C = C + nodeC;
+        [nodeC, batlife_ratio, cirlife_ratio] = maintain_node(params, ...
+            curCenters, curProb);
         % update output list
+        out.C = out.C + nodeC;
         out.batlife(i) = batlife_ratio;
         out.cirlife(i) = cirlife_ratio;
 
@@ -126,7 +102,5 @@ for i = 1:size(Xa, 1)
         %fprintf('    original maintenance cost: %f\n', nodeCur);
     end
 end
-
-out.C = C;
 end
 
