@@ -44,6 +44,7 @@ predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
 Tv = fah2cel(temp_mean_vd); % convert to Celsius
+Tv_v = (5/9) * abs(diag(temp_cov_vd));
 
 % get the valid indexes directly connected to the sink
 predMST(n_V+1) = 0;         % configure the predecessor of the sink to 0
@@ -91,7 +92,7 @@ while true
             curF = sense_quality(X_remain, cov_remain, Xa_cur, ...
                 cov_Xa_cur, params.K);
             curF = real(curF); % take the real part
-            curM = maintain_cost(Qparams.Xv, Tv, Xa_idx, ...
+            curM = maintain_cost(Qparams.Xv, Tv, Tv_v, Xa_idx, ...
                 commMST, predMST, false);
             curRes = IDSQparams.alpha * (curF - lastF) - ...
                 (1 - IDSQparams.alpha) * (curM.C - lastM.C);

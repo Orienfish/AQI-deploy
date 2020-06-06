@@ -6,6 +6,7 @@ function [out] = costFunction(Qparams, params)
 %   Qparams.cov_vd: cov matrix at Xv given pre-deployment D
 %   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
+%   Qparams.Ta_v: variance of average temperature at Xa
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %
 %   params.n_V: number of reference locations
@@ -66,7 +67,7 @@ F = sense_quality(Qparams.Xv, Qparams.cov_vd, Qparams.Xa, Qparams.cov_ad, ...
 F = real(F); % take the real part
 
 % calculate the maintenance cost of connected sensors
-M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, G, pred, ...
+M = maintain_cost(Qparams.Xa, Qparams.Ta, Qparams.Ta_v, connected, G, pred, ...
     false);
 
 % calculate the penalty of unconnected sensors

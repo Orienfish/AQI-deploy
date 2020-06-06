@@ -15,7 +15,7 @@ diary 'log.txt';
 % V - reference locations
 % A - deployment plan
 m_A = 16;                          % number of sensors to place
-Q = 40.0;                          % sensing quality quota
+Q = 10.0;                          % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
 edate = '2020-02-20 23:50:00 UTC'; % end date of the dataset
@@ -23,10 +23,10 @@ thres = 1e3;                       % a threshold used to filter out outliers
 interval = 60 * 10;                % 10 mins = 600 secs
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = false;
+run.IDSQ = true;
 run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
+run.PSO = true;
+run.ABC = true;
 run.debugPlot = true;
 run.DWG = false;
 
@@ -55,7 +55,7 @@ bound.latUpper = max(D_lat);
 bound.latLower = min(D_lat);
 bound.lonUpper = max(D_lon);
 bound.lonLower = min(D_lon);
-gridUnit = 0.02; % adjustable
+gridUnit = 0.05; % adjustable
 c = [(bound.latUpper + bound.latLower) / 2, (bound.lonUpper + bound.lonLower) / 2]; % sink position
 n_latV = floor((bound.latUpper - bound.latLower) / gridUnit);
 n_lonV = floor((bound.lonUpper - bound.lonLower) / gridUnit);
@@ -161,7 +161,7 @@ params.K_temp = K_temp;                 % the fitted RBF kernel function
 params.c = c;                           % position of the sink in [lat lon]
 params.R = R;                           % communication range of the sensors in km
 params.bound = bound;                   % bound for the area
-params.logging = true;                 % logging flag
+params.logging = false;                 % logging flag
 % parameters of the cost function
 params.weights = [0.5 0.4 0.1];         % weights for maintenance cost,
                                         % sensing quality and penalty
@@ -202,18 +202,22 @@ if run.PSO
     PSOparams.nVar = m_A;                   % number of unknown decision variables
     PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
     % parameters of PSO
-    PSOparams.maxIter = 50;                % maximum number of iterations
-    PSOparams.nPop = 50;                    % populaton size
+    PSOparams.maxIter = 30;                 % maximum number of iterations
+    PSOparams.nPop = 20;                    % populaton size
     PSOparams.chi = 0.729;                  % constriction factor
     PSOparams.w = PSOparams.chi;            % inertia coefficient
     PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
     PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
     PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
-    PSOparams.thres = 1000;                  % penalty threshold in initialzation
+    PSOparams.thres = 800;                 % penalty threshold in initialzation
 
     tic
     resPSO = PSO(Qparams, params, PSOparams);
     resPSO.time = toc;
+    
+    fprintf('PSO: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+        size(resPSO.Position, 1), resPSO.senQuality, resPSO.mainCost, ...
+        resPSO.time);
     
     % plot the BestCosts curve
     figure();
@@ -233,10 +237,11 @@ if run.PSO
         Qparams.cov_temp_d, params.K_temp);
     Qparams.Xa = resPSO.Position;
     Qparams.Ta = fah2cel(temp_mean_ad);
+    Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
 
     % calculate the maintenance cost of connected sensors
-    M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
-        params.logging);
+    M = maintain_cost(Qparams.Xa, Qparams.Ta, Qparams.Ta_v, connected, ...
+        PSO_G, PSOpred, params.logging);
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
 end
@@ -248,16 +253,21 @@ if run.ABC
     ABCparams.nVar = m_A;                   % number of unknown decision variables
     ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
     % parameters of ABC
-    ABCparams.maxIter = 50;                % maximum number of iterations
-    ABCparams.nPop = 50;                    % populaton size
+    ABCparams.maxIter = 30;                % maximum number of iterations
+    ABCparams.nPop = 20;                    % populaton size
     ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
     ABCparams.L = round(0.4 * ABCparams.nVar * ABCparams.nPop); 
                                             % Abandonment Limit Parameter (Trial Limit)
     ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
+    ABCparams.thres = 800;                 % penalty threshold in initialzation
 
     tic
     resABC = ABC(Qparams, params, ABCparams);
     resABC.time = toc;
+    
+    fprintf('ABC: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+        size(resABC.Position, 1), resABC.senQuality, resABC.mainCost, ...
+        resABC.time);
     
     % plot the BestCosts curve
     figure();
@@ -277,10 +287,11 @@ if run.ABC
         Qparams.cov_temp_d, params.K_temp);
     Qparams.Xa = resABC.Position;
     Qparams.Ta = fah2cel(temp_mean_ad);
+    Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
 
     % calculate the maintenance cost of connected sensors
-    M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
-        params.logging);
+    M = maintain_cost(Qparams.Xa, Qparams.Ta, Qparams.Ta_v, connected, ...
+        ABC_G, ABCpred, params.logging);
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
     bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
 end

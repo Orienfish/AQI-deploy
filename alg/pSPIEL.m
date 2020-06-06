@@ -8,8 +8,6 @@ function [out] = pSPIEL(Qparams, params)
 %   Qparams.Xd: list of predeployment locations
 %   Qparams.mean_d: mean value at D
 %   Qparams.cov_d: cov matrix at D
-%   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
-%   Qparams.Ta: average temperature estimation at Xa in Celsius
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %   Qparams.mean_temp_d: mean temperature at D
 %   Qparams.cov_temp_d: cov matrix of temperature at D
@@ -130,7 +128,7 @@ cov_Xa_remain = Qparams.cov_vd(~connected, ~connected);
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
     params.K_temp);
 Tv = fah2cel(temp_mean_vd);  % convert to Celsius
-Tv_v = (5/9) * abs(diag(temp_cov_vd)) * 5;
+Tv_v = (5/9) * abs(diag(temp_cov_vd));
 
 % update the sensing quality and maintenance cost
 out.F = sense_quality(Xa_remain, cov_Xa_remain, Xa, cov_Xa, params.K);

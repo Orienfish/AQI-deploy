@@ -33,7 +33,7 @@ params.Pref = params.Vdd * params.Iref / 1000; % reference power in W
 params.nbins = 10;       % number of bins to deal with temperature variation
 
 % settings for battery
-cap_bat = 20000;   % initial battery capacity in mAh
+cap_bat = 2000;   % initial battery capacity in mAh
 dt_bat_h = 1;      % time resolution of battery in hours
 c_bat = 10;        % cost to replace battery
 
@@ -48,7 +48,8 @@ out.cirlife = zeros(size(Xa, 1), 1);
 % get children cnt of each node from MST
 child_cnt = get_child_cnt(predMST);
 
-disp(Ta_v);
+% temporary fix
+Ta_v = Ta_v * 5;
 
 % iterative through every node in Xa
 for i = 1:size(Xa, 1)
@@ -107,20 +108,22 @@ for i = 1:size(Xa, 1)
                 batlife_ratio, cirlife_ratio, nodeC);
         end
         
+        % for comparison, the following line compute the original 
+        % maintenance cost only using average temperature
         % estimate power in W
-        [stbPwr, stbTc] = stbPower(params, Ta(i));
+        %[stbPwr, stbTc] = stbPower(params, Ta(i));
 
         % estimate battery lifetime in ratio
         % convert from W to mW then calculate average current draw
-        I_mA = stbPwr * 1000 / params.Vdd;
-        batlife_cur = bat_ratio(cap_bat, Ta(i), I_mA, dt_bat_h);
+        %I_mA = stbPwr * 1000 / params.Vdd;
+        %batlife_cur = bat_ratio(cap_bat, Ta(i), I_mA, dt_bat_h);
 
         % estimate circuit lifetime in ratio
-        cirlife_cur = mttf_ratio(stbTc);
+        %cirlife_cur = mttf_ratio(stbTc);
 
         % update total maintenance cost
-        nodeCur = c_bat / batlife_cur + c_node / cirlife_cur;
-        fprintf('    original maintenance cost: %f\n', nodeCur);
+        %nodeCur = c_bat / batlife_cur + c_node / cirlife_cur;
+        %fprintf('    original maintenance cost: %f\n', nodeCur);
     end
 end
 

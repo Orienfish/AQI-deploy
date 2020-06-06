@@ -9,6 +9,7 @@ function [out] = ABC(Qparams, params, ABCparams)
 %   Qparams.cov_d: cov matrix at D
 %   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
+%   Qparams.Ta_v: variance of average temperature at Xa
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %   Qparams.mean_temp_d: mean temperature at D
 %   Qparams.cov_temp_d: cov matrix of temperature at D
@@ -75,6 +76,7 @@ for i = 1:ABCparams.nPop
         % setting the rest quality parameters
         Qparams.Xa = pop(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
         
@@ -139,6 +141,7 @@ for it = 1:ABCparams.maxIter
         % setting the rest quality parameters
         Qparams.Xa = newbee.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
         

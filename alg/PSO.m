@@ -9,6 +9,7 @@ function [out] = PSO(Qparams, params, PSOparams)
 %   Qparams.cov_d: cov matrix at D
 %   Qparams.Xa: list of locations we are supposed to observe, [lat lon]
 %   Qparams.Ta: average temperature estimation at Xa in Celsius
+%   Qparams.Ta_v: variance of average temperature at Xa
 %   Qparams.cov_ad: cov matrix at Xa given pre-deployment D
 %   Qparams.mean_temp_d: mean temperature at D
 %   Qparams.cov_temp_d: cov matrix of temperature at D
@@ -96,6 +97,7 @@ for i = 1:PSOparams.nPop
         % setting the rest quality parameters
         Qparams.Xa = particle(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
         
@@ -161,6 +163,7 @@ for it = 1:PSOparams.maxIter
         % Qparams.cov_vd = pm2_5_cov_vd;  % use the same value as init
         Qparams.Xa = particle(i).Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
         res = costFunction(Qparams, params);
 
