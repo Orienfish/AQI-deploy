@@ -369,7 +369,7 @@ if run.ABC
         ABCparams.L = round(0.4 * ABCparams.maxIter); 
                                                 % Abandonment Limit Parameter (Trial Limit)
         ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
-        ABCparams.thres = 1000;                  % penalty threshold in initialzation
+        ABCparams.thres = 800;                  % penalty threshold in initialzation
 
         tic
         resABC = ABC(Qparams, params, ABCparams);
