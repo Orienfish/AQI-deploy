@@ -9,7 +9,7 @@ addpath('../libs/');
 addpath('../mlibs/');
 addpath('../lldistkm/');
 addpath('../gp/');
-addpath('../');
+addpath('../alg');
 
 %% settings
 % D - pre-deployment

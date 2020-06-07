@@ -25,8 +25,8 @@ N_bin = 10;                        % number of bins to approximate ambient
                                    % temperature distribution
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = false;
-run.pSPIEL = false;
+run.IDSQ = true;
+run.pSPIEL = true;
 run.PSO = false;
 run.ABC = false;
 run.debugPlot = false;
