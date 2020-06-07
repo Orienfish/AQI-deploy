@@ -241,7 +241,7 @@ if run.IDSQ
         tic
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
         resIDSQ.time = toc;
-        plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+        %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
         connected = size(resIDSQ.Xa, 1); % number of selected sensors
         fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
             connected, resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
