@@ -73,6 +73,8 @@ GlobalBest.Cost = inf;
 % Note: no need to init Position, senQuality, mainCost
 % they will be init in the initialization process
 
+costTime = 0.0;  % time consumption in evaluating cost function
+
 % initialize population members
 for i = 1:PSOparams.nPop
     while true
@@ -99,7 +101,9 @@ for i = 1:PSOparams.nPop
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
+        costStart = tic;
         res = costFunction(Qparams, params);
+        costTime = costTime + toc(costStart);
         
         % loop until generate one valid solutioin
         if res.P <= PSOparams.thres
@@ -165,7 +169,9 @@ for it = 1:PSOparams.maxIter
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
+        costStart = tic;
         res = costFunction(Qparams, params);
+        costTime = costTime + toc(costStart);
 
         particle(i).Cost = res.cost;
         particle(i).senQuality = res.F;
@@ -206,5 +212,6 @@ end
 
 out = GlobalBest; % include position, cost, senQuality, mainCost
 out.BestCosts = BestCosts; % cost iteration curve
+out.costTime = costTime;
 end
 

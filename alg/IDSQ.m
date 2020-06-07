@@ -39,6 +39,8 @@ commMST = NaN(n_V + 1);     % init a matrix for connection graph
                             % for the sink c. A single-direction MST.
 predMST = NaN(n_V + 1, 1);  % predecessor nodes of the MST
 
+costTime = 0.0;  % time consumption in evaluating cost function
+
 % predict the ambient temperature at Xv in Celsius
 [temp_mean_vd, temp_cov_vd] = gp_predict_knownD( ...
     Qparams.Xv, Qparams.Xd, Qparams.mean_temp_d, Qparams.cov_temp_d, ...
@@ -89,6 +91,7 @@ while true
             cov_Xa_cur = Qparams.cov_vd(logical(Xa_idx), logical(Xa_idx));
             
             % combine all together
+            costStart = tic;
             curF = sense_quality(X_remain, cov_remain, Xa_cur, ...
                 cov_Xa_cur, params.K);
             curF = real(curF); % take the real part
@@ -96,6 +99,7 @@ while true
                 commMST, predMST, false);
             curRes = IDSQparams.alpha * (curF - lastF) - ...
                 (1 - IDSQparams.alpha) * (curM.C - lastM.C) / 200.0;
+            costTime = costTime + toc(costStart);
             
             if params.logging
                 fprintf('node: %d senQ gain: %f main cost gain: %f res: %f\n', ...
@@ -158,5 +162,6 @@ res.commMST = commMST(MST_idx, MST_idx);
 % pass the final results
 res.F = lastF;
 res.M = lastM;
+res.costTime = costTime;
 end
 

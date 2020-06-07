@@ -56,6 +56,8 @@ BestSol.Cost = inf;
 % Note: no need to init Position, senQuality, mainCost
 % they will be init in the initialization process
 
+costTime = 0.0;  % time consumption in evaluating cost function
+
 % Create Initial Population
 for i = 1:ABCparams.nPop
     while true
@@ -78,7 +80,9 @@ for i = 1:ABCparams.nPop
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
+        costStart = tic;
         res = costFunction(Qparams, params);
+        costTime = costTime + toc(costStart);
         
         % loop until generate one valid solutioin
         if res.P <= ABCparams.thres
@@ -143,7 +147,9 @@ for it = 1:ABCparams.maxIter
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
         Qparams.cov_ad = pm2_5_cov_ad;
+        costStart = tic;
         res = costFunction(Qparams, params);
+        costTime = costTime + toc(costStart);
         
         newbee.Cost = res.cost;
         newbee.senQuality = res.F;
@@ -203,7 +209,9 @@ for it = 1:ABCparams.maxIter
         Qparams.Xa = newbee.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
         Qparams.cov_ad = pm2_5_cov_ad;
+        costStart = tic;
         res = costFunction(Qparams, params);
+        costTime = costTime + toc(costStart);
         
         newbee.Cost = res.cost;
         newbee.senQuality = res.F;
@@ -239,7 +247,9 @@ for it = 1:ABCparams.maxIter
             Qparams.Xa = pop(i).Position;
             Qparams.Ta = fah2cel(temp_mean_ad);
             Qparams.cov_ad = pm2_5_cov_ad;
+            costStart = tic;
             res = costFunction(Qparams, params);
+            costTime = costTime + toc(costStart);
             
             pop(i).Cost = res.cost;
             pop(i).senQuality = res.F;

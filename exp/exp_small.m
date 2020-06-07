@@ -238,9 +238,9 @@ if run.IDSQ
     for it = 1:run.iter
         fprintf('Calling IDSQ...\n');
         IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
-        tic
+        st = tic;
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
-        resIDSQ.time = toc;
+        resIDSQ.time = toc(st);
         %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
         connected = size(resIDSQ.Xa, 1); % number of selected sensors
         fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
@@ -253,7 +253,8 @@ if run.IDSQ
             bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
         end
-        str = sprintf('%d %f %f %f', connected, resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
+        str = sprintf('%d %f %f %f %f', connected, resIDSQ.F, resIDSQ.M.C, ...
+            resIDSQ.time, resIDSQ.costTime);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('IDSQ_%s_%d.txt', target, Q);
         log(filename, str);
@@ -264,12 +265,12 @@ end
 if run.pSPIEL
     for it = 1:run.iter
         fprintf('Calling pSPIEL...\n');
-        tic
+        st = tic;
         respSPIEL = pSPIEL(Qparams, params);
-        respSPIEL.time = toc;
+        respSPIEL.time = toc(st);
         fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
             sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C, respSPIEL.time);
-        nodespSPIEL = vertcat(respSPIEL.Position, c);
+        %nodespSPIEL = vertcat(respSPIEL.Position, c);
         %plot_solution(nodespSPIEL, respSPIEL.pred);
         %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
         %    respSPIEL.M.batlife, '');
@@ -308,9 +309,9 @@ if run.PSO
         PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
         PSOparams.thres = 800;                  % penalty threshold in initialzation
 
-        tic
+        st = tic;
         resPSO = PSO(Qparams, params, PSOparams);
-        resPSO.time = toc;
+        resPSO.time = toc(st);
 
         fprintf('PSO: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
             size(resPSO.Position, 1), resPSO.senQuality, resPSO.mainCost, ...
@@ -324,7 +325,7 @@ if run.PSO
 
         % plot the solution
         [PSO_G, PSOpred] = MST(resPSO.Position, c, R);
-        nodesPSO = vertcat(resPSO.Position, c);
+        %nodesPSO = vertcat(resPSO.Position, c);
         %plot_solution(nodesPSO, PSOpred);
 
         % plot lifetime of each node
@@ -349,8 +350,8 @@ if run.PSO
             bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
         end
-        str = sprintf('%d %f %f %f', sum(connected), resPSO.senQuality, ...
-            resPSO.mainCost, resPSO.time);
+        str = sprintf('%d %f %f %f %f', sum(connected), resPSO.senQuality, ...
+            resPSO.mainCost, resPSO.time, resPSO.costTime);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('PSO_%s_%d.txt', target, Q);
         log(filename, str);
@@ -373,9 +374,9 @@ if run.ABC
         ABCparams.a = 0.4;                      % Acceleration Coefficient Upper Bound
         ABCparams.thres = 800;                  % penalty threshold in initialzation
 
-        tic
+        st = tic;
         resABC = ABC(Qparams, params, ABCparams);
-        resABC.time = toc;
+        resABC.time = toc(st);
         
         fprintf('ABC: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
             size(resABC.Position, 1), resABC.senQuality, resABC.mainCost, ...
@@ -389,7 +390,7 @@ if run.ABC
 
         % plot the solution
         [ABC_G, ABCpred] = MST(resABC.Position, c, R);
-        nodesABC = vertcat(resABC.Position, c);
+        %nodesABC = vertcat(resABC.Position, c);
         %plot_solution(nodesABC, ABCpred);
 
         % plot lifetime of each node
@@ -414,8 +415,8 @@ if run.ABC
             bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
         end
-        str = sprintf('%d %f %f %f', sum(connected), resABC.senQuality, ...
-            resABC.mainCost, resABC.time);
+        str = sprintf('%d %f %f %f %f', sum(connected), resABC.senQuality, ...
+            resABC.mainCost, resABC.time, resABC.costTime);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('ABC_%s_%d.txt', target, Q);
         log(filename, str);
