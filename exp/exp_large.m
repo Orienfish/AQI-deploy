@@ -236,12 +236,14 @@ if run.IDSQ
     for it = 1:run.iter
         fprintf('Calling IDSQ...\n');
         IDSQparams.alpha = 0.6;             % the weight factor in IDSQ
+        tic
         resIDSQ = IDSQ(Qparams, params, IDSQparams);
-        %plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
+        resIDSQ.time = toc;
+        plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
         connected = size(resIDSQ.Xa, 1); % number of selected sensors
-        fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f\n', ...
-            connected, resIDSQ.F, resIDSQ.M.C);
-        
+        fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+            connected, resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
+
         % logging
         bat_str = '';
         cir_str = '';
@@ -249,7 +251,7 @@ if run.IDSQ
             bat_str = sprintf('%s%.4f,', bat_str, resIDSQ.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, resIDSQ.M.cirlife(idx));
         end
-        str = sprintf('%d %f %f', connected, resIDSQ.F, resIDSQ.M.C);
+        str = sprintf('%d %f %f %f', connected, resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('IDSQ_%s_%d.txt', target, Q);
         log(filename, str);
@@ -259,12 +261,12 @@ end
 %% call pSPIEL
 if run.pSPIEL
     for it = 1:run.iter
-        fprintf('Calling pSPIEL...\n');
+         fprintf('Calling pSPIEL...\n');
         tic
         respSPIEL = pSPIEL(Qparams, params);
-        toc
-        fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f\n', ...
-            sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C);
+        respSPIEL.time = toc;
+        fprintf('pSPIEL: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+            sum(respSPIEL.connected), respSPIEL.F, respSPIEL.M.C, respSPIEL.time);
         nodespSPIEL = vertcat(respSPIEL.Position, c);
         %plot_solution(nodespSPIEL, respSPIEL.pred);
         %bubbleplot_wsize(respSPIEL.Position(:, 1), respSPIEL.Position(:, 2), ...
@@ -279,8 +281,8 @@ if run.pSPIEL
             bat_str = sprintf('%s%.4f,', bat_str, respSPIEL.M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, respSPIEL.M.cirlife(idx));
         end
-        str = sprintf('%d %f %f', sum(respSPIEL.connected), respSPIEL.F, ...
-            respSPIEL.M.C);
+        str = sprintf('%d %f %f %f', sum(respSPIEL.connected), respSPIEL.F, ...
+            respSPIEL.M.C, respSPIEL.time);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('pSPIEL_%s_%d.txt', target, Q);
         log(filename, str);
@@ -295,18 +297,22 @@ if run.PSO
         PSOparams.nVar = m_A;                   % number of unknown decision variables
         PSOparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of PSO
-        PSOparams.maxIter = 50;                % maximum number of iterations
-        PSOparams.nPop = 10;                    % populaton size
+        PSOparams.maxIter = 30;                % maximum number of iterations
+        PSOparams.nPop = 20;                    % populaton size
         PSOparams.chi = 0.729;                  % constriction factor
         PSOparams.w = PSOparams.chi;            % inertia coefficient
         PSOparams.wdamp = 1;                    % damping ratio of inertia coefficient
         PSOparams.c1 = 2 * PSOparams.chi;       % personal acceleration coefficient
         PSOparams.c2 = 2 * PSOparams.chi;       % social acceleration coefficient
-        PSOparams.thres = 1000;                  % penalty threshold in initialzation
+        PSOparams.thres = 800;                  % penalty threshold in initialzation
 
         tic
         resPSO = PSO(Qparams, params, PSOparams);
-        toc
+        resPSO.time = toc;
+
+        fprintf('PSO: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+            size(resPSO.Position, 1), resPSO.senQuality, resPSO.mainCost, ...
+            resPSO.time);
 
         % plot the BestCosts curve
         figure();
@@ -326,9 +332,10 @@ if run.PSO
             Qparams.cov_temp_d, params.K_temp);
         Qparams.Xa = resPSO.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
 
         % calculate the maintenance cost of connected sensors
-        M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, PSO_G, PSOpred, ...
+        M = maintain_cost(Qparams.Xa, Qparams.Ta, Qparams.Ta_v, connected, PSO_G, PSOpred, ...
             params.logging);
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
@@ -340,8 +347,8 @@ if run.PSO
             bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
         end
-        str = sprintf('%d %f %f', sum(connected), resPSO.senQuality, ...
-            resPSO.mainCost);
+        str = sprintf('%d %f %f %f', sum(connected), resPSO.senQuality, ...
+            resPSO.mainCost, resPSO.time);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('PSO_%s_%d.txt', target, Q);
         log(filename, str);
@@ -356,8 +363,8 @@ if run.ABC
         ABCparams.nVar = m_A;                   % number of unknown decision variables
         ABCparams.VarSize = [m_A 2]; % matrix size of decision variables
         % parameters of ABC
-        ABCparams.maxIter = 50;                % maximum number of iterations
-        ABCparams.nPop = 10;                    % populaton size
+        ABCparams.maxIter = 30;                % maximum number of iterations
+        ABCparams.nPop = 20;                    % populaton size
         ABCparams.nOnlooker = ABCparams.nPop;   % number of onlooker bees
         ABCparams.L = round(0.4 * ABCparams.maxIter); 
                                                 % Abandonment Limit Parameter (Trial Limit)
@@ -366,7 +373,11 @@ if run.ABC
 
         tic
         resABC = ABC(Qparams, params, ABCparams);
-        toc
+        resABC.time = toc;
+        
+        fprintf('ABC: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+            size(resABC.Position, 1), resABC.senQuality, resABC.mainCost, ...
+            resABC.time);
 
         % plot the BestCosts curve
         figure();
@@ -386,9 +397,10 @@ if run.ABC
             Qparams.cov_temp_d, params.K_temp);
         Qparams.Xa = resABC.Position;
         Qparams.Ta = fah2cel(temp_mean_ad);
+        Qparams.Ta_v = (5/9) * abs(diag(temp_cov_ad));
 
         % calculate the maintenance cost of connected sensors
-        M = maintain_cost(Qparams.Xa, Qparams.Ta, connected, ABC_G, ABCpred, ...
+        M = maintain_cost(Qparams.Xa, Qparams.Ta, Qparams.Ta_v, connected, ABC_G, ABCpred, ...
             params.logging);
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.batlife, '');
         %bubbleplot_wsize(Qparams.Xa(:, 1), Qparams.Xa(:, 2), M.cirlife, '');
@@ -400,8 +412,8 @@ if run.ABC
             bat_str = sprintf('%s%.4f,', bat_str, M.batlife(idx));
             cir_str = sprintf('%s%.4f,', cir_str, M.cirlife(idx));
         end
-        str = sprintf('%d %f %f', sum(connected), resABC.senQuality, ...
-            resABC.mainCost);
+        str = sprintf('%d %f %f %f', sum(connected), resABC.senQuality, ...
+            resABC.mainCost, resABC.time);
         str = sprintf('%s\n%s\n%s\n', str, bat_str, cir_str);
         filename = sprintf('ABC_%s_%d.txt', target, Q);
         log(filename, str);

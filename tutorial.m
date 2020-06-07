@@ -177,8 +177,9 @@ if run.IDSQ
     resIDSQ = IDSQ(Qparams, params, IDSQparams);
     resIDSQ.time = toc;
     plot_IDSQ(resIDSQ.Xa, resIDSQ.commMST, c);
-    fprintf('IDSQ: senQ: %f mainCost: %f time: %f\n', ...
-        resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
+    resIDSQ.node_cnt = size(resIDSQ.Xa, 1); % number of selected sensors
+    fprintf('IDSQ: # of nodes: %d senQ: %f mainCost: %f time: %f\n', ...
+        resIDSQ.node_cnt, resIDSQ.F, resIDSQ.M.C, resIDSQ.time);
 end
 
 %% call pSPIEL
