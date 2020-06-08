@@ -278,5 +278,6 @@ end
 
 out = BestSol; % include position, cost, senQuality, mainCost
 out.BestCosts = BestCosts; % cost iteration curve
+out.costTime = costTime;
 end
 
