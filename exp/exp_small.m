@@ -1,4 +1,4 @@
-function exp_small(target, run, Q)
+function exp_small(target, run, Q, m_A)
 %% Run simulation on the small dataset for the given target
 %
 % Args:
@@ -16,7 +16,7 @@ addpath('../');
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 16;                          % number of sensors to place
+%m_A = 16;                          % number of sensors to place
 % Q = 10.0;                        % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
