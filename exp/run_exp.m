@@ -12,9 +12,9 @@ addpath('../SFO/sfo/');
 run.IDSQ = false;
 run.pSPIEL = false;
 run.PSO = true;
-run.ABC = false;
+run.ABC = true;
 run.debugPlot = false;
-run.iter = 10;
+run.iter = 1;
 
 % run experiments on small dataset
 %exp_small('pm2_5', run, 10.0, 16);
@@ -39,12 +39,17 @@ run.iter = 10;
 % run experiments on large dataset
 % Quota -> # of sensors in pSPIEL
 % 50 -> 85, 40 -> 62
-exp_large('pm2_5', run, 40.0, 54); 
-exp_large('pm1', run, 40.0, 54);
-exp_large('pm10', run, 40.0, 54);
-exp_large('humid', run, 40.0, 54);
-exp_large('temp', run, 40.0, 54);
-exp_large('pm2_5', run, 32.0, 54);
-exp_large('pm2_5', run, 34.0, 54);
-exp_large('pm2_5', run, 36.0, 54);
-exp_large('pm2_5', run, 38.0, 54);
+%exp_large('pm2_5', run, 40.0, 54); 
+%exp_large('pm1', run, 40.0, 54);
+%exp_large('pm10', run, 40.0, 54);
+%exp_large('humid', run, 40.0, 54);
+%exp_large('temp', run, 40.0, 54);
+%exp_large('pm2_5', run, 32.0, 54);
+%exp_large('pm2_5', run, 34.0, 54);
+%exp_large('pm2_5', run, 36.0, 54);
+%exp_large('pm2_5', run, 38.0, 54);
+exp_large('pm2_5', run, 32.0, 29);
+exp_large('pm2_5', run, 34.0, 32);
+exp_large('pm2_5', run, 36.0, 35);
+exp_large('pm2_5', run, 38.0, 38);
+exp_large('pm2_5', run, 40.0, 42);
