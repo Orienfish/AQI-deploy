@@ -1,5 +1,5 @@
 # AQI-deploy
-This repo contains the implementation for paper:
+This repo contains the implementation for paper
 
 [Optimizing Sensor Deployment and Maintenance Costs in Large-Scale Environmental Monitoring](https://ieeexplore.ieee.org/abstract/document/9211489)
 
