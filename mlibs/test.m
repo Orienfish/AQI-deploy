@@ -5,8 +5,8 @@ close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test battery lifetime function, plot out the lifetime at various temp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-n_bat = 10;
-temp = linspace(-5, 40, n_bat);
+n_bat = 20;
+temp = linspace(-40, 40, n_bat);
 batlife = zeros(1, n_bat);
 for i = 1:n_bat
     batlife(i) = bat_ratio(750, temp(i), 40, 0.1);
@@ -19,9 +19,9 @@ title('Estimated battery time under various ambient temperature');
 % test ambient temperature to core temperature conversion function
 % plot out the core temperature at various ambient temperature
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-n_amb2core = 5;
+n_amb2core = 10;
 iter = 400;
-Tamb = linspace(0, 40, n_amb2core);
+Tamb = linspace(-40, 40, n_amb2core);
 Tcore = zeros(n_amb2core, iter);
 for i = 1:n_amb2core
     Tcore(i, 1) = Tamb(i);

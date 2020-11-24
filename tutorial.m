@@ -14,7 +14,7 @@ diary 'log.txt';
 % D - pre-deployment
 % V - reference locations
 % A - deployment plan
-m_A = 16;                          % number of sensors to place
+m_A = 10;                          % number of sensors to place
 Q = 10.0;                          % sensing quality quota
 R = 10;                            % communication range of sensors in km
 sdate = '2019-01-01 00:00:00 UTC'; % start date of the dataset
@@ -25,10 +25,10 @@ N_bin = 10;                        % number of bins to approximate ambient
                                    % temperature distribution
 
 % boolean variables deciding whether to run each algorithm
-run.IDSQ = true;
-run.pSPIEL = true;
-run.PSO = false;
-run.ABC = false;
+run.IDSQ = false;
+run.pSPIEL = false;
+run.PSO = true;
+run.ABC = true;
 run.debugPlot = false;
 run.DWG = false;
 

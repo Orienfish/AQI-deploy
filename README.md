@@ -1,5 +1,11 @@
 # AQI-deploy
-Optimizing sensor deployment and maintenance costs in large-scale environmental monitoring.
+This repo contains the implementation for paper:
+
+[Optimizing Sensor Deployment and Maintenance Costs in Large-Scale Environmental Monitoring](https://ieeexplore.ieee.org/abstract/document/9211489)
+
+Xiaofan Yu, Kazim Ergun, Ludmila Cherkasova, Tajana Šimunić Rosing.
+
+CODES+ISSS 2020. Published in TCAD 2020.
 
 ## Getting Started
 
@@ -36,6 +42,23 @@ The `tutorial.m` will walk you through all of our algorithms on the small datase
 * Artificial Bee Colony (ABC) Optimization [[Karaboga and Basturk 2007]](https://link.springer.com/article/10.1007/s10898-007-9149-x).
 
 For PSO and ABC, we devise the cost function for our sensor deployment problem in `./alg/CostFunction.m`.
+
+## Citation
+
+If you found the codebase useful, please consider citing
+
+```bibtex
+@article{yu2020optimizing,
+  title={Optimizing Sensor Deployment and Maintenance Costs for Large-Scale Environmental Monitoring},
+  author={Yu, Xiaofan and Ergun, Kazim and Cherkasova, Ludmila and Rosing, Tajana {\v{S}}imuni{\'c}},
+  journal={IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems},
+  volume={39},
+  number={11},
+  pages={3918--3930},
+  year={2020},
+  publisher={IEEE}
+}
+```
 
 ## License
 
